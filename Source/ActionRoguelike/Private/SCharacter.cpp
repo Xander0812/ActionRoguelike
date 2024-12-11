@@ -7,6 +7,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "SInteractionComponent.h"
+#include <Kismet/KismetMathLibrary.h>
 
 
 
@@ -22,6 +24,8 @@ ASCharacter::ASCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>("CameraComp");
 	CameraComp->SetupAttachment(SpringArmComp);
+
+	InteractionComp = CreateDefaultSubobject<USInteractionComponent>("InteractionComp");
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
@@ -67,6 +71,8 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASCharacter::Look);
 
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Triggered, this, &ASCharacter::PrimaryAttack);
+
+		EnhancedInputComponent->BindAction(PrimaryInteractAction, ETriggerEvent::Triggered, this, &ASCharacter::PrimaryInteract);
 	}
 	else
 	{
@@ -114,13 +120,53 @@ void ASCharacter::Look(const FInputActionValue& Value)
 
 void ASCharacter::PrimaryAttack()
 {
+	PlayAnimMontage(AttackAnim);
+
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
+}
+
+void ASCharacter::PrimaryAttack_TimeElapsed()
+{
 	FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
 
-	FTransform _spawnTM = FTransform(GetControlRotation(), _handLocation);
+	FCollisionObjectQueryParams _objectQueryParams;
+	_objectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+
+	FVector _eyeLocation = CameraComp->GetComponentLocation();
+	FRotator _eyeRotation = CameraComp->GetComponentRotation();
 
 	FActorSpawnParameters _spawnParams;
 	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	_spawnParams.Instigator = this;
+
+
+	FVector _end = _eyeLocation + (_eyeRotation.Vector() * 5000);
+
+	FVector _adjustedTraceEnd = _end;
+
+
+	FHitResult _hit;
+	bool _blockingHit = GetWorld()->LineTraceSingleByObjectType(_hit, _eyeLocation, _end, _objectQueryParams);
+
+	if(_blockingHit)
+	{
+		_adjustedTraceEnd = _hit.Location;
+	}
+
+	FRotator _projectileRotation = (_adjustedTraceEnd - _handLocation).Rotation();
+
+	FTransform _spawnTM = FTransform(_projectileRotation, _handLocation);
 
 	GetWorld()->SpawnActor<AActor>(ProjectileClass, _spawnTM, _spawnParams);
+
+}
+
+
+void ASCharacter::PrimaryInteract()
+{
+	if (InteractionComp) 
+	{
+		InteractionComp->PrimaryInteract();
+	}
 }
 
