@@ -28,14 +28,25 @@ protected:
 	TSubclassOf<AActor> ProjectileClass;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<AActor> BlackHoleClass;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<AActor> TeleportClass;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
 	UAnimMontage* AttackAnim;
 
+	/* timers to keep track of animations */
 	FTimerHandle TimerHandle_PrimaryAttack;
 
-	UPROPERTY(VisibleAnywhere)
+	FTimerHandle TimerHandle_BlackHole;
+
+	FTimerHandle TimerHandle_Teleport;
+
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	USpringArmComponent* SpringArmComp;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	UCameraComponent* CameraComp;
 
 	UPROPERTY(VisibleAnywhere)
@@ -47,16 +58,27 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 
-	/** Look Input Action */
+	/* Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	/* Jump Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 
+	/* Primary Attack Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PrimaryAttackAction;
 
+	/* BlackHole Ability Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* BlackHoleAbilityAction;
+
+	/* Teleport Ability Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* TeleportAbilityAction;
+
+	/* Primary Interaction Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PrimaryInteractAction;
 
@@ -64,17 +86,27 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	/** Called for movement input */
+	/* Called for movement input */
 	void Move(const FInputActionValue& Value);
 
-	/** Called for looking input */
+	/* Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	/** Called for looking input */
+	/* Actions that are called on action to play animation and start the timer */
 	void PrimaryAttack();
 
+	void BlackHoleAbility();
+
+	void TeleportAbility();
+
+	/* Actions that are called after timer stops */
 	void PrimaryAttack_TimeElapsed();
 
+	void BlackHoleAbility_TimeElapsed();
+
+	void TeleportAbility_TimeElapsed();
+
+	/* Interact Action */
 	void PrimaryInteract();
 
 public:	

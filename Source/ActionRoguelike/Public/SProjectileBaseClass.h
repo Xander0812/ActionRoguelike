@@ -19,14 +19,20 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	//We need sphere component to track overlap and hit events for projectile
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USphereComponent* SphereComp;
 
+	//built in UE projectile movement component to adjust projectaile like behaviour
 	UPROPERTY(VisibleAnywhere)
 	UProjectileMovementComponent* MovementComp;
 
+	//particle effect based visualisation of projectiles from downloaded assets
 	UPROPERTY(VisibleAnywhere)
 	UParticleSystemComponent* EffectComp;
+
+	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	AActor* ProjectileInstigator;*/
 
 	// Sets default values for this actor's properties
 	ASProjectileBaseClass();

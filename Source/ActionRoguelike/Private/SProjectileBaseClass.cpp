@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SProjectileBaseClass.h"
-
+	
 // Sets default values
 ASProjectileBaseClass::ASProjectileBaseClass()
 {
@@ -16,12 +16,18 @@ ASProjectileBaseClass::ASProjectileBaseClass()
 	EffectComp->SetupAttachment(SphereComp);
 
 	MovementComp = CreateDefaultSubobject<UProjectileMovementComponent>("MovementComp");
+	MovementComp->bRotationFollowsVelocity = true;
+	MovementComp->bInitialVelocityInLocalSpace = true;
+	MovementComp->ProjectileGravityScale = 0;
 }
 
 // Called when the game starts or when spawned
 void ASProjectileBaseClass::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//We need to ignore instagator (who spawned the projectile) to not generate hit and overlap events
+	SphereComp->IgnoreActorWhenMoving(GetInstigator(), true);
 }
 
 // Called every frame

@@ -70,8 +70,16 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASCharacter::Look);
 
+		// Primary attack
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Triggered, this, &ASCharacter::PrimaryAttack);
 
+		//Blackole ability
+		EnhancedInputComponent->BindAction(BlackHoleAbilityAction, ETriggerEvent::Triggered, this, &ASCharacter::BlackHoleAbility);
+
+		//Teleport ability
+		EnhancedInputComponent->BindAction(TeleportAbilityAction, ETriggerEvent::Triggered, this, &ASCharacter::TeleportAbility);
+
+		//Interaction with the world
 		EnhancedInputComponent->BindAction(PrimaryInteractAction, ETriggerEvent::Triggered, this, &ASCharacter::PrimaryInteract);
 	}
 	else
@@ -121,30 +129,37 @@ void ASCharacter::Look(const FInputActionValue& Value)
 void ASCharacter::PrimaryAttack()
 {
 	PlayAnimMontage(AttackAnim);
-
+	
+	//we wait for attack animation to finish before spawning the projectile
 	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 }
 
+
 void ASCharacter::PrimaryAttack_TimeElapsed()
 {
+	//Set the point in the model from whitch shoud projectile fire from
 	FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
 
+	//Set query parameters
 	FCollisionObjectQueryParams _objectQueryParams;
 	_objectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
 
+	//setup camera rotation and position for ray to fire from
 	FVector _eyeLocation = CameraComp->GetComponentLocation();
 	FRotator _eyeRotation = CameraComp->GetComponentRotation();
 
+	//spawn param defaults
 	FActorSpawnParameters _spawnParams;
 	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	_spawnParams.Instigator = this;
 
-
+	//end of a ray
 	FVector _end = _eyeLocation + (_eyeRotation.Vector() * 5000);
 
+	//set ray default to avoid Null pointers if ray hasn't hit anything
 	FVector _adjustedTraceEnd = _end;
 
-
+	//raycast
 	FHitResult _hit;
 	bool _blockingHit = GetWorld()->LineTraceSingleByObjectType(_hit, _eyeLocation, _end, _objectQueryParams);
 
@@ -153,12 +168,53 @@ void ASCharacter::PrimaryAttack_TimeElapsed()
 		_adjustedTraceEnd = _hit.Location;
 	}
 
+	//adjust projectile rotation so it would fly right in the center of the screen where player aims and spawn projectile
 	FRotator _projectileRotation = (_adjustedTraceEnd - _handLocation).Rotation();
-
 	FTransform _spawnTM = FTransform(_projectileRotation, _handLocation);
-
 	GetWorld()->SpawnActor<AActor>(ProjectileClass, _spawnTM, _spawnParams);
 
+}
+
+void ASCharacter::BlackHoleAbility()
+{
+	PlayAnimMontage(AttackAnim);
+
+	//we wait for attack animation to finish before spawning the projectile
+	GetWorldTimerManager().SetTimer(TimerHandle_BlackHole, this, &ASCharacter::BlackHoleAbility_TimeElapsed, 0.2f);
+}
+
+void ASCharacter::BlackHoleAbility_TimeElapsed()
+{
+	FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+	FActorSpawnParameters _spawnParams;
+	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	_spawnParams.Instigator = this;
+
+	FTransform _spawnTM = FTransform(GetControlRotation(), _handLocation);
+
+	GetWorld()->SpawnActor<AActor>(BlackHoleClass, _spawnTM, _spawnParams);
+}
+
+void ASCharacter::TeleportAbility()
+{
+	PlayAnimMontage(AttackAnim);
+
+	//we wait for attack animation to finish before spawning the projectile
+	GetWorldTimerManager().SetTimer(TimerHandle_Teleport, this, &ASCharacter::TeleportAbility_TimeElapsed, 0.2f);
+}
+
+void ASCharacter::TeleportAbility_TimeElapsed()
+{
+	FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+	FActorSpawnParameters _spawnParams;
+	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	_spawnParams.Instigator = this;
+
+	FTransform _spawnTM = FTransform(GetControlRotation(), _handLocation);
+
+	GetWorld()->SpawnActor<AActor>(TeleportClass, _spawnTM, _spawnParams);
 }
 
 

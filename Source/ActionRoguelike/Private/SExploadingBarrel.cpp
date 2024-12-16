@@ -33,26 +33,3 @@ void ASExploadingBarrel::Explode()
 	RadialForceComp->FireImpulse();
 }
 
-//float ASExploadingBarrel::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
-//	AActor* DamageCauser)
-//{
-//	// Could safely skip the base logic...
-//	//DamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-//
-//	RadialForceComp->FireImpulse();
-//
-//	//ExplosionComp->Activate();
-//
-//	// @todo: cause damage to other stuff around it
-//
-//	//UE_LOGFMT(LogGame, Log, "OnActorHit in Explosive Barrel");
-//
-//	// Warnings as structed logs even show up in the "Message Log" window of UnrealEd
-//	//UE_LOGFMT(LogGame, Warning, "OnActorHit, OtherActor: {name}, at game time: {timeseconds}", GetNameSafe(DamageCauser), GetWorld()->TimeSeconds);
-//
-//	//FString CombinedString = FString::Printf(TEXT("Hit at location: %s"), *Hit.ImpactPoint.ToString());
-//	//DrawDebugString(GetWorld(), Hit.ImpactPoint, CombinedString, nullptr, FColor::Green, 2.0f, true);
-//
-//	return DamageAmount;
-//}
-
