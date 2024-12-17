@@ -12,13 +12,22 @@ ASProjectileBaseClass::ASProjectileBaseClass()
 	SphereComp->SetCollisionProfileName("Projectile");
 	RootComponent = SphereComp;
 
-	EffectComp = CreateDefaultSubobject<UParticleSystemComponent>("EffectComp");
-	EffectComp->SetupAttachment(SphereComp);
+	BaseParticleEffect = CreateDefaultSubobject<UParticleSystemComponent>("EffectComp");
+	BaseParticleEffect->SetupAttachment(SphereComp);
 
 	MovementComp = CreateDefaultSubobject<UProjectileMovementComponent>("MovementComp");
 	MovementComp->bRotationFollowsVelocity = true;
 	MovementComp->bInitialVelocityInLocalSpace = true;
 	MovementComp->ProjectileGravityScale = 0;
+}
+
+void ASProjectileBaseClass::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if(OtherActor != GetInstigator())
+	{
+		//We spawn Emmiter to play animation of teleportation
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExtraParticleEffect, GetActorLocation(), GetActorRotation(), true);
+	}
 }
 
 // Called when the game starts or when spawned

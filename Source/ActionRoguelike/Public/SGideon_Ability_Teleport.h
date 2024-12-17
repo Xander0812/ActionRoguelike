@@ -24,8 +24,6 @@ protected:
 	FTimerHandle TimerHandle_Teleport;
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	UParticleSystem* TeleportEffectComp;
 
 	/* We teleport the player to projectile location */
 	void TriggerTeleport();
@@ -34,7 +32,7 @@ public:
 	void PlayTeleportParticle();
 
 	/* Basic on hit function */
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 
-	virtual void BeginPlay() override;
+	void BeginPlay() override;
 };

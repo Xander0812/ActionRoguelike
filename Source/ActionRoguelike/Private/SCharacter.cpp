@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "SInteractionComponent.h"
+#include "SAttributeComponent.h"
 #include <Kismet/KismetMathLibrary.h>
 
 
@@ -26,9 +27,18 @@ ASCharacter::ASCharacter()
 	CameraComp->SetupAttachment(SpringArmComp);
 
 	InteractionComp = CreateDefaultSubobject<USInteractionComponent>("InteractionComp");
+	AttributeComp = CreateDefaultSubobject<USAttributeComponent>("AttributeComp");
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
+}
+
+
+void ASCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	AttributeComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
 }
 
 // Called when the game starts or when spawned
@@ -134,66 +144,12 @@ void ASCharacter::PrimaryAttack()
 	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 }
 
-
-void ASCharacter::PrimaryAttack_TimeElapsed()
-{
-	//Set the point in the model from whitch shoud projectile fire from
-	FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
-
-	//Set query parameters
-	FCollisionObjectQueryParams _objectQueryParams;
-	_objectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-
-	//setup camera rotation and position for ray to fire from
-	FVector _eyeLocation = CameraComp->GetComponentLocation();
-	FRotator _eyeRotation = CameraComp->GetComponentRotation();
-
-	//spawn param defaults
-	FActorSpawnParameters _spawnParams;
-	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	_spawnParams.Instigator = this;
-
-	//end of a ray
-	FVector _end = _eyeLocation + (_eyeRotation.Vector() * 5000);
-
-	//set ray default to avoid Null pointers if ray hasn't hit anything
-	FVector _adjustedTraceEnd = _end;
-
-	//raycast
-	FHitResult _hit;
-	bool _blockingHit = GetWorld()->LineTraceSingleByObjectType(_hit, _eyeLocation, _end, _objectQueryParams);
-
-	if(_blockingHit)
-	{
-		_adjustedTraceEnd = _hit.Location;
-	}
-
-	//adjust projectile rotation so it would fly right in the center of the screen where player aims and spawn projectile
-	FRotator _projectileRotation = (_adjustedTraceEnd - _handLocation).Rotation();
-	FTransform _spawnTM = FTransform(_projectileRotation, _handLocation);
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, _spawnTM, _spawnParams);
-
-}
-
 void ASCharacter::BlackHoleAbility()
 {
 	PlayAnimMontage(AttackAnim);
 
 	//we wait for attack animation to finish before spawning the projectile
 	GetWorldTimerManager().SetTimer(TimerHandle_BlackHole, this, &ASCharacter::BlackHoleAbility_TimeElapsed, 0.2f);
-}
-
-void ASCharacter::BlackHoleAbility_TimeElapsed()
-{
-	FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
-
-	FActorSpawnParameters _spawnParams;
-	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	_spawnParams.Instigator = this;
-
-	FTransform _spawnTM = FTransform(GetControlRotation(), _handLocation);
-
-	GetWorld()->SpawnActor<AActor>(BlackHoleClass, _spawnTM, _spawnParams);
 }
 
 void ASCharacter::TeleportAbility()
@@ -204,17 +160,67 @@ void ASCharacter::TeleportAbility()
 	GetWorldTimerManager().SetTimer(TimerHandle_Teleport, this, &ASCharacter::TeleportAbility_TimeElapsed, 0.2f);
 }
 
+void ASCharacter::PrimaryAttack_TimeElapsed()
+{
+	ASCharacter::SpawnProjectile(ProjectileClass);
+}
+
+void ASCharacter::BlackHoleAbility_TimeElapsed()
+{
+	ASCharacter::SpawnProjectile(BlackHoleClass);
+}
+
 void ASCharacter::TeleportAbility_TimeElapsed()
 {
-	FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	ASCharacter::SpawnProjectile(TeleportClass);
+}
 
-	FActorSpawnParameters _spawnParams;
-	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	_spawnParams.Instigator = this;
+void ASCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
+{
+	if (ensure(ClassToSpawn))
+	{
+		//Set the point in the model from whitch shoud projectile fire from
+		FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
 
-	FTransform _spawnTM = FTransform(GetControlRotation(), _handLocation);
+		FCollisionShape _colliderShape;
+		_colliderShape.SetSphere(20.f);
 
-	GetWorld()->SpawnActor<AActor>(TeleportClass, _spawnTM, _spawnParams);
+		FCollisionQueryParams _querryParams;
+		_querryParams.AddIgnoredActor(this);
+
+		//Set query parameters
+		FCollisionObjectQueryParams _objectQueryParams;
+		_objectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+		_objectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+		_objectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+
+
+		//setup camera rotation and position for ray to fire from
+		FVector _eyeLocation = CameraComp->GetComponentLocation();
+		FRotator _eyeRotation = CameraComp->GetComponentRotation();
+
+		//spawn param defaults
+		FActorSpawnParameters _spawnParams;
+		_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		_spawnParams.Instigator = this;
+
+		//end of a ray
+		FVector _traceEnd = _eyeLocation + (_eyeRotation.Vector() * 5000);
+
+		//raycast
+		FHitResult _hit;
+		bool _blockingHit = GetWorld()->SweepSingleByObjectType(_hit, _eyeLocation, _traceEnd, FQuat::Identity, _objectQueryParams, _colliderShape, _querryParams);
+
+		if (_blockingHit)
+		{
+			_traceEnd = _hit.Location;
+		}
+
+		//adjust projectile rotation so it would fly right in the center of the screen where player aims and spawn projectile
+		FRotator _projectileRotation = (_traceEnd - _handLocation).Rotation();
+		FTransform _spawnTM = FTransform(_projectileRotation, _handLocation);
+		GetWorld()->SpawnActor<AActor>(ClassToSpawn, _spawnTM, _spawnParams);
+	}
 }
 
 
@@ -223,6 +229,15 @@ void ASCharacter::PrimaryInteract()
 	if (InteractionComp) 
 	{
 		InteractionComp->PrimaryInteract();
+	}
+}
+
+void ASCharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta)
+{
+	if(NewHealth <= 0.0f && Delta < 0.0f)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		DisableInput(PC);
 	}
 }
 

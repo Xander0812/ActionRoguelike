@@ -7,6 +7,8 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "SAttributeComponent.h"
+#include <Kismet/GameplayStatics.h>
 
 #include "SProjectileBaseClass.generated.h"
 
@@ -16,28 +18,33 @@ class ACTIONROGUELIKE_API ASProjectileBaseClass : public AActor
 	GENERATED_BODY()
 	
 public:
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	//We need sphere component to track overlap and hit events for projectile
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USphereComponent* SphereComp;
 
 	//built in UE projectile movement component to adjust projectaile like behaviour
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UProjectileMovementComponent* MovementComp;
 
 	//particle effect based visualisation of projectiles from downloaded assets
-	UPROPERTY(VisibleAnywhere)
-	UParticleSystemComponent* EffectComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UParticleSystemComponent* BaseParticleEffect;
 
-	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	AActor* ProjectileInstigator;*/
+	UPROPERTY(EditAnywhere, Category = "Components")
+	UParticleSystem* ExtraParticleEffect;
+
+	UFUNCTION()
+	virtual void OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	// Sets default values for this actor's properties
 	ASProjectileBaseClass();
 
 protected:
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 

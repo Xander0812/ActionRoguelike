@@ -12,6 +12,7 @@ class UInputMappingContext;
 class UInputAction;
 class USInteractionComponent;
 class UAnimMontage;
+class USAttributeComponent;
 struct FInputActionValue;
 
 UCLASS()
@@ -43,13 +44,17 @@ protected:
 
 	FTimerHandle TimerHandle_Teleport;
 
+
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	USpringArmComponent* SpringArmComp;
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	UCameraComponent* CameraComp;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USAttributeComponent* AttributeComp;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USInteractionComponent* InteractionComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -106,8 +111,15 @@ protected:
 
 	void TeleportAbility_TimeElapsed();
 
+	void SpawnProjectile(TSubclassOf<AActor> ClassToSpawn);
+
 	/* Interact Action */
 	void PrimaryInteract();
+
+	UFUNCTION()
+	void OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
+
+	virtual void PostInitializeComponents();
 
 public:	
 	// Called every frame
