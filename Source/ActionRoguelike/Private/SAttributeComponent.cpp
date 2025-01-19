@@ -3,24 +3,71 @@
 
 #include "SAttributeComponent.h"
 
+
+
 // Sets default values for this component's properties
 USAttributeComponent::USAttributeComponent()
 {
-	Health = 100;
+	MaxHealth = 100;
+	CurrentHealth = MaxHealth;
 }
 
-bool USAttributeComponent::ApplyHealthChange(float Delta)
+bool USAttributeComponent::ApplyHealthChange(float Delta, AActor* InstigatorActor)
 {
-	Health += Delta;
+	float OldHealth = CurrentHealth;
 
-	OnHealthChanged.Broadcast(nullptr, this, Health, Delta);
+	CurrentHealth = FMath::Clamp(CurrentHealth + Delta, 0.0f, MaxHealth);
 
-	return true;
+	float ActualDelta = CurrentHealth - OldHealth;
+	
+	OnHealthChanged.Broadcast(InstigatorActor, this, CurrentHealth, Delta);
+
+	return ActualDelta !=0;
+}
+
+float USAttributeComponent::GetMaxHealth() const
+{
+	return MaxHealth;
+}
+
+float USAttributeComponent::GetCurrentHealth() const
+{
+	return CurrentHealth;
+}
+
+bool USAttributeComponent::IsFullHealth() const
+{
+	return CurrentHealth == MaxHealth;
 }
 
 bool USAttributeComponent::IsAlive() const
 {
-	return Health > 0.0;
+	return CurrentHealth > 0.0;
 }
 
+float USAttributeComponent::GetHealthPercent() const
+{
+	float _healtPercent = (CurrentHealth * 100) / MaxHealth;
+	return _healtPercent;
+}
 
+USAttributeComponent* USAttributeComponent::GetAttributes(AActor* FromActor)
+{
+	if(FromActor)
+	{
+		return Cast<USAttributeComponent>(FromActor->GetComponentByClass(USAttributeComponent::StaticClass()));
+	}
+
+	return nullptr;
+}
+
+bool USAttributeComponent::IsActorAlive(AActor* Actor)
+{
+	USAttributeComponent* _attributeComp = GetAttributes(Actor);
+
+	if(_attributeComp)
+	{
+		return _attributeComp->IsAlive();
+	}
+	return false;
+}

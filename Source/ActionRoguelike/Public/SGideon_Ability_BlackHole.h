@@ -33,13 +33,4 @@ public:
 	void OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 
 	void BeginPlay() override;
-	//* We need three meshes because dowloaded effects consists of three meshes*/
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	//UStaticMeshComponent* BaseMeshComp;
-
-	//UPROPERTY(VisibleAnywhere)
-	//UStaticMeshComponent* RimMeshComp;
-
-	//UPROPERTY(VisibleAnywhere)
-	//UStaticMeshComponent* VertexMeshComp;
 };

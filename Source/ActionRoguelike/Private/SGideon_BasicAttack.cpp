@@ -14,12 +14,14 @@ void ASGideon_BasicAttack::OnComponentOverlap(UPrimitiveComponent* OverlappedCom
 {
 	Super::OnComponentOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
-	if ((OtherActor) && OtherActor != GetInstigator())
+	//Deal damage on component over lap if it has attribut component aka has health to deal damage to
+
+	if ((OtherActor) && OtherActor != GetInstigator() && !OtherActor->IsA(ASProjectileBaseClass::StaticClass()))
 	{
-		USAttributeComponent* _attributeComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
+		USAttributeComponent* _attributeComp = USAttributeComponent::GetAttributes(OtherActor);
 		if (_attributeComp)
 		{
-			_attributeComp->ApplyHealthChange(-20);
+			_attributeComp->ApplyHealthChange(-ProjectileDamage, GetInstigator());
 		}
 		Destroy();
 	}

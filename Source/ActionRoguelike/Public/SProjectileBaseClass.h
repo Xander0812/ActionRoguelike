@@ -8,8 +8,8 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "SAttributeComponent.h"
+#include "Sound/SoundCue.h"
 #include <Kismet/GameplayStatics.h>
-
 #include "SProjectileBaseClass.generated.h"
 
 UCLASS()
@@ -34,8 +34,22 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UParticleSystemComponent* BaseParticleEffect;
 
-	UPROPERTY(EditAnywhere, Category = "Components")
+	UPROPERTY(EditAnywhere, Category = "VFX")
 	UParticleSystem* ExtraParticleEffect;
+
+	/*VFX of projectile casting*/
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	UParticleSystem* CastParticleEffect;
+
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	TSubclassOf<UCameraShakeBase> CameraShakeEffect;
+
+	UPROPERTY(EditAnywhere, Category = "SFX")
+	USoundCue* LoopSoundCue;
+
+	UPROPERTY(EditAnywhere, Category = "SFX")
+	USoundCue* ImpactSoundCue;
+
 
 	UFUNCTION()
 	virtual void OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

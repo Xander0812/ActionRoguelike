@@ -23,10 +23,12 @@ ASProjectileBaseClass::ASProjectileBaseClass()
 
 void ASProjectileBaseClass::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(OtherActor != GetInstigator())
+	if(OtherActor != GetInstigator() && !OtherActor->IsA(ASProjectileBaseClass::StaticClass()))
 	{
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSoundCue, GetActorLocation());
 		//We spawn Emmiter to play animation of teleportation
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExtraParticleEffect, GetActorLocation(), GetActorRotation(), true);
+		UGameplayStatics::PlayWorldCameraShake(GetWorld(), CameraShakeEffect, GetActorLocation(), /*CameraShakeInnerRadius*/ 100, /*CameraShakeOuterRadius*/ 500);
 	}
 }
 
@@ -35,6 +37,7 @@ void ASProjectileBaseClass::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UGameplayStatics::SpawnSoundAttached(LoopSoundCue, this->GetRootComponent(), TEXT("SphereComp"), GetActorLocation(), EAttachLocation::KeepRelativeOffset, true);
 	//We need to ignore instagator (who spawned the projectile) to not generate hit and overlap events
 	SphereComp->IgnoreActorWhenMoving(GetInstigator(), true);
 }

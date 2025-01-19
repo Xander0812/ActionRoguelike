@@ -10,6 +10,7 @@
 #include "SInteractionComponent.h"
 #include "SAttributeComponent.h"
 #include <Kismet/KismetMathLibrary.h>
+#include <Kismet/GameplayStatics.h>
 
 
 
@@ -31,6 +32,9 @@ ASCharacter::ASCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
+
+	HandSocketName = "Muzzle_01";
+	TimeToHitParamName = "TimeToHit";
 }
 
 
@@ -51,7 +55,6 @@ void ASCharacter::BeginPlay()
 void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -138,31 +141,28 @@ void ASCharacter::Look(const FInputActionValue& Value)
 
 void ASCharacter::PrimaryAttack()
 {
-	PlayAnimMontage(AttackAnim);
-	
+	StartAttackEffects(BaseAttackClass);
 	//we wait for attack animation to finish before spawning the projectile
 	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 }
 
 void ASCharacter::BlackHoleAbility()
 {
-	PlayAnimMontage(AttackAnim);
-
+	StartAttackEffects(BlackHoleClass);
 	//we wait for attack animation to finish before spawning the projectile
 	GetWorldTimerManager().SetTimer(TimerHandle_BlackHole, this, &ASCharacter::BlackHoleAbility_TimeElapsed, 0.2f);
 }
 
 void ASCharacter::TeleportAbility()
 {
-	PlayAnimMontage(AttackAnim);
-
+	StartAttackEffects(TeleportClass);
 	//we wait for attack animation to finish before spawning the projectile
 	GetWorldTimerManager().SetTimer(TimerHandle_Teleport, this, &ASCharacter::TeleportAbility_TimeElapsed, 0.2f);
 }
 
 void ASCharacter::PrimaryAttack_TimeElapsed()
 {
-	ASCharacter::SpawnProjectile(ProjectileClass);
+	ASCharacter::SpawnProjectile(BaseAttackClass);
 }
 
 void ASCharacter::BlackHoleAbility_TimeElapsed()
@@ -175,12 +175,20 @@ void ASCharacter::TeleportAbility_TimeElapsed()
 	ASCharacter::SpawnProjectile(TeleportClass);
 }
 
+void ASCharacter::StartAttackEffects(TSubclassOf<ASProjectileBaseClass> ProjectileClass)
+{
+	PlayAnimMontage(AttackAnim);
+	//spawn cast effect depending on projectile class
+	UGameplayStatics::SpawnEmitterAttached(ProjectileClass.GetDefaultObject()->CastParticleEffect, GetMesh(), HandSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget);
+}
+
 void ASCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
 {
 	if (ensure(ClassToSpawn))
 	{
 		//Set the point in the model from whitch shoud projectile fire from
-		FVector _handLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+		HandLocation = GetMesh()->GetSocketLocation(HandSocketName);
 
 		FCollisionShape _colliderShape;
 		_colliderShape.SetSphere(20.f);
@@ -217,8 +225,8 @@ void ASCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
 		}
 
 		//adjust projectile rotation so it would fly right in the center of the screen where player aims and spawn projectile
-		FRotator _projectileRotation = (_traceEnd - _handLocation).Rotation();
-		FTransform _spawnTM = FTransform(_projectileRotation, _handLocation);
+		FRotator _projectileRotation = (_traceEnd - HandLocation).Rotation();
+		FTransform _spawnTM = FTransform(_projectileRotation, HandLocation);
 		GetWorld()->SpawnActor<AActor>(ClassToSpawn, _spawnTM, _spawnParams);
 	}
 }
@@ -234,10 +242,16 @@ void ASCharacter::PrimaryInteract()
 
 void ASCharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta)
 {
-	if(NewHealth <= 0.0f && Delta < 0.0f)
+	if(Delta < 0.0f)
 	{
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		DisableInput(PC);
+		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
+
+		if (NewHealth <= 0.0f)
+		{
+			//Player death. Disable input
+			APlayerController* PC = Cast<APlayerController>(GetController());
+			DisableInput(PC);
+		}
 	}
 }
 

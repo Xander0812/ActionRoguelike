@@ -14,15 +14,6 @@ ASGideon_Ability_BlackHole::ASGideon_Ability_BlackHole()
 	RadialForceComp->bAutoActivate = false;
 	RadialForceComp->Radius = 700;
 
-	//BaseMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMeshComp"));
-	//BaseMeshComp->SetupAttachment(SphereComp);
-
-	//RimMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RimMeshComp"));
-	//RimMeshComp->SetupAttachment(BaseMeshComp);
-
-	//VertexMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VertexMeshComp"));
-	//VertexMeshComp->SetupAttachment(BaseMeshComp);
-
 	//Set OnComponentHit action event
 	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASGideon_Ability_BlackHole::OnComponentOverlap);
 }
@@ -39,7 +30,13 @@ void ASGideon_Ability_BlackHole::OnComponentOverlap(UPrimitiveComponent* Overlap
 {
 	Super::OnComponentOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
-	OtherActor->Destroy();
+	//Custom black hole ability projectile overlap behavior
+	//We just destroy object that are too close
+
+	if(OtherActor && OtherComp->GetCollisionObjectType() == ECollisionChannel::ECC_PhysicsBody)
+	{
+		OtherActor->Destroy();
+	}
 }
 
 void ASGideon_Ability_BlackHole::DestroyOnAnimationEnd()

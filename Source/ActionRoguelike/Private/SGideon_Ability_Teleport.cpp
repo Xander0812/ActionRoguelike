@@ -7,6 +7,8 @@ ASGideon_Ability_Teleport::ASGideon_Ability_Teleport()
 {
 	MovementComp->InitialSpeed = 2000;
 
+	OverlapLocation = FVector(0, 0, 0);
+
 	//Set OnComponentHit action event
 	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASGideon_Ability_Teleport::OnComponentOverlap);
 }
@@ -22,9 +24,13 @@ void ASGideon_Ability_Teleport::BeginPlay()
 void ASGideon_Ability_Teleport::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	Super::OnComponentOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+	if(OtherActor && !OtherActor->IsA(ASProjectileBaseClass::StaticClass()))
+	{
+		OverlapLocation = SweepResult.ImpactPoint;
+		//Call function that should've been called after timer
+		&ASGideon_Ability_Teleport::PlayTeleportParticle;
+	}
 
-	//Call function that should've been called after timer
-	&ASGideon_Ability_Teleport::PlayTeleportParticle;
 }
 
 void ASGideon_Ability_Teleport::PlayTeleportParticle()
@@ -32,11 +38,13 @@ void ASGideon_Ability_Teleport::PlayTeleportParticle()
 	//Stop timer because projectile collided with something before timer went out
 	GetWorldTimerManager().ClearTimer(TimerHandle_FlyTime);
 
+	//disable collision so projectile would not generate collision and on hit events
+	SetActorEnableCollision(false);
+	SphereComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	//We stop projectile so we would teleport right at the point it triggered this function
 	MovementComp->StopMovementImmediately();
-
-	//Change collision profile so the projectile would not generate collision and on hit events
-	SphereComp->SetCollisionProfileName(TEXT("OverlapAll"));
+	MovementComp->SetVelocityInLocalSpace(FVector(0, 0, 0));
 
 	//Deactivate projectile base visual effect. We don't need it anymore
 	BaseParticleEffect->Deactivate();
@@ -51,6 +59,6 @@ void ASGideon_Ability_Teleport::PlayTeleportParticle()
 void ASGideon_Ability_Teleport::TriggerTeleport()
 {
 	//Teleport to projectile location and destroy the projectile
-	GetInstigator()->SetActorLocation(this->GetActorLocation());
+	GetInstigator()->SetActorLocation(OverlapLocation == FVector(0, 0, 0) ? GetActorLocation() : OverlapLocation);
 	Destroy();
 }

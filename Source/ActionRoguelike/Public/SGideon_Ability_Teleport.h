@@ -23,6 +23,8 @@ protected:
 	/* Timer to let paricle play before teleporting the player */
 	FTimerHandle TimerHandle_Teleport;
 
+	FVector OverlapLocation;
+
 public:
 
 	/* We teleport the player to projectile location */

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "SProjectileBaseClass.h"
 #include "SCharacter.generated.h"
 
 class UCameraComponent;
@@ -25,14 +26,21 @@ public:
 	ASCharacter();
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<AActor> ProjectileClass;
+
+	UPROPERTY(VisibleAnywhere, Category = "Effects")
+	FName HandSocketName;
+
+	UPROPERTY(VisibleAnywhere, Category = "Effects")
+	FName TimeToHitParamName;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<AActor> BlackHoleClass;
+	TSubclassOf<ASProjectileBaseClass> BaseAttackClass;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<AActor> TeleportClass;
+	TSubclassOf<ASProjectileBaseClass> BlackHoleClass;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<ASProjectileBaseClass> TeleportClass;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	UAnimMontage* AttackAnim;
@@ -44,6 +52,8 @@ protected:
 
 	FTimerHandle TimerHandle_Teleport;
 
+	/*HandLocation to spawn projectiles from*/
+	FVector HandLocation;
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	USpringArmComponent* SpringArmComp;
@@ -87,7 +97,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PrimaryInteractAction;
 
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -110,6 +119,8 @@ protected:
 	void BlackHoleAbility_TimeElapsed();
 
 	void TeleportAbility_TimeElapsed();
+
+	void StartAttackEffects(TSubclassOf<ASProjectileBaseClass> ProjectileClass);
 
 	void SpawnProjectile(TSubclassOf<AActor> ClassToSpawn);
 
