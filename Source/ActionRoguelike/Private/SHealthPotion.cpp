@@ -2,26 +2,37 @@
 
 
 #include "SHealthPotion.h"
+#include "SPlayerState.h"
 
 void ASHealthPotion::Interact_Implementation(APawn* InstigatorPawn)
 {
 	//We heal the object that interacts with this buff
 
-	if(InstigatorPawn)
+	if (!ensure(InstigatorPawn))
 	{
-		USAttributeComponent* _attributeComp = InstigatorPawn->GetComponentByClass<USAttributeComponent>();
+		return;
+	}
 
-		if(!_attributeComp->IsFullHealth())
+	if(!bInteractable)
+	{
+		return;
+	}
+
+	USAttributeComponent* _attributeComp = InstigatorPawn->GetComponentByClass<USAttributeComponent>();
+
+	if (_attributeComp && !_attributeComp->IsFullHealth())
+	{
+
+		if (ASPlayerState* _playerState = InstigatorPawn->GetPlayerState<ASPlayerState>())
 		{
-			if(_attributeComp->GetCurrentHealth() + HealingAmount > _attributeComp->GetMaxHealth())
+
+			if (_playerState->RemoveCredits(HealingCreditCost, this) && _attributeComp->ApplyHealthChange(HealingAmount, this))
 			{
-				_attributeComp->ApplyHealthChange(_attributeComp->GetMaxHealth() - _attributeComp->GetCurrentHealth(), this);
+
+				//Activated when healed sucsessfully
+				Super::Interact_Implementation(InstigatorPawn);
+
 			}
-			else
-			{
-				_attributeComp->ApplyHealthChange(HealingAmount, this);
-			}
-			Super::Interact_Implementation(InstigatorPawn);
 		}
 	}
 }

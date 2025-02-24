@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "SAttributeComponent.h"
+#include "SWorldUserWidget.h"
+#include <SActionComponent.h>
 #include "SAICharacter.generated.h"
 
 class UPawnSensingComponent;
@@ -23,6 +25,11 @@ protected:
 
 	void SetTargetActor(AActor* NewActor);
 
+	USWorldUserWidget* ActiveHealthBar;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> HealthBarWidgetClass;
+
 	/*Name for material function to call on hit*/
 	UPROPERTY(VisibleAnywhere, Category = "Effects")
 	FName TimeToHitParamName;
@@ -30,12 +37,24 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USAttributeComponent* AttributeComp;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USActionComponent* ActionComp;
+
 	/*Pawn sensing reference to spot the player*/
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UPawnSensingComponent* PawnSensingComp;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<USWorldUserWidget> TargetSpotedWidgetClass;
+
+	UPROPERTY()
+	USWorldUserWidget* TargetSpotedWidgetInstance;
+
 	UFUNCTION()
 	void OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayerSpotted(APawn* Target);
 public:	
 
 	virtual void PostInitializeComponents() override;
@@ -45,4 +64,7 @@ public:
 
 	UFUNCTION()
 	void OnPawnSeen(APawn* Pawn);
+
+	UFUNCTION(BlueprintCallable)
+	AActor* GetTargetActor() const;
 };

@@ -29,12 +29,14 @@ ASCharacter::ASCharacter()
 
 	InteractionComp = CreateDefaultSubobject<USInteractionComponent>("InteractionComp");
 	AttributeComp = CreateDefaultSubobject<USAttributeComponent>("AttributeComp");
+	ActionComp = CreateDefaultSubobject<USActionComponent>("ActionComp");
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
 
-	HandSocketName = "Muzzle_01";
 	TimeToHitParamName = "TimeToHit";
+
+	BlackHoleAbilityCost = 10;
 }
 
 
@@ -43,6 +45,11 @@ void ASCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	AttributeComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+}
+
+FVector ASCharacter::GetPawnViewLocation() const
+{
+	return CameraComp->GetComponentLocation();
 }
 
 // Called when the game starts or when spawned
@@ -83,6 +90,10 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASCharacter::Look);
 
+		//Sprinting
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ASCharacter::SprintStart);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ASCharacter::SprintStop);
+
 		// Primary attack
 		EnhancedInputComponent->BindAction(PrimaryAttackAction, ETriggerEvent::Triggered, this, &ASCharacter::PrimaryAttack);
 
@@ -94,12 +105,20 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 		//Interaction with the world
 		EnhancedInputComponent->BindAction(PrimaryInteractAction, ETriggerEvent::Triggered, this, &ASCharacter::PrimaryInteract);
+
+		EnhancedInputComponent->BindAction(Parry, ETriggerEvent::Triggered, this, &ASCharacter::ParryAction);
 	}
 	else
 	{
 		//UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
+
+void ASCharacter::HealSelf(float Amount /* = 100 */)
+{
+	AttributeComp->ApplyHealthChange(Amount, this);
+}
+
 
 void ASCharacter::Move(const FInputActionValue& Value)
 {
@@ -139,98 +158,38 @@ void ASCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ASCharacter::SprintStart()
+{
+	ActionComp->StartActionByName(this, "Sprint");
+}
+
+void ASCharacter::SprintStop()
+{
+	ActionComp->StopActionByName(this, "Sprint");
+}
+
 void ASCharacter::PrimaryAttack()
 {
-	StartAttackEffects(BaseAttackClass);
-	//we wait for attack animation to finish before spawning the projectile
-	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
+	ActionComp->StartActionByName(this, "PrimaryAttack");
 }
 
 void ASCharacter::BlackHoleAbility()
 {
-	StartAttackEffects(BlackHoleClass);
-	//we wait for attack animation to finish before spawning the projectile
-	GetWorldTimerManager().SetTimer(TimerHandle_BlackHole, this, &ASCharacter::BlackHoleAbility_TimeElapsed, 0.2f);
+	if(AttributeComp->ApplyRageChange(-BlackHoleAbilityCost, this))
+	{
+		ActionComp->StartActionByName(this, "BlackHoleAbility");
+	}
 }
 
 void ASCharacter::TeleportAbility()
 {
-	StartAttackEffects(TeleportClass);
-	//we wait for attack animation to finish before spawning the projectile
-	GetWorldTimerManager().SetTimer(TimerHandle_Teleport, this, &ASCharacter::TeleportAbility_TimeElapsed, 0.2f);
+	ActionComp->StartActionByName(this, "TeleportAbility");
 }
 
-void ASCharacter::PrimaryAttack_TimeElapsed()
+void ASCharacter::ParryAction()
 {
-	ASCharacter::SpawnProjectile(BaseAttackClass);
+	ActionComp->StartActionByName(this, "Parry");
 }
-
-void ASCharacter::BlackHoleAbility_TimeElapsed()
-{
-	ASCharacter::SpawnProjectile(BlackHoleClass);
-}
-
-void ASCharacter::TeleportAbility_TimeElapsed()
-{
-	ASCharacter::SpawnProjectile(TeleportClass);
-}
-
-void ASCharacter::StartAttackEffects(TSubclassOf<ASProjectileBaseClass> ProjectileClass)
-{
-	PlayAnimMontage(AttackAnim);
-	//spawn cast effect depending on projectile class
-	UGameplayStatics::SpawnEmitterAttached(ProjectileClass.GetDefaultObject()->CastParticleEffect, GetMesh(), HandSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget);
-}
-
-void ASCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
-{
-	if (ensure(ClassToSpawn))
-	{
-		//Set the point in the model from whitch shoud projectile fire from
-
-		HandLocation = GetMesh()->GetSocketLocation(HandSocketName);
-
-		FCollisionShape _colliderShape;
-		_colliderShape.SetSphere(20.f);
-
-		FCollisionQueryParams _querryParams;
-		_querryParams.AddIgnoredActor(this);
-
-		//Set query parameters
-		FCollisionObjectQueryParams _objectQueryParams;
-		_objectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-		_objectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-		_objectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
-
-
-		//setup camera rotation and position for ray to fire from
-		FVector _eyeLocation = CameraComp->GetComponentLocation();
-		FRotator _eyeRotation = CameraComp->GetComponentRotation();
-
-		//spawn param defaults
-		FActorSpawnParameters _spawnParams;
-		_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		_spawnParams.Instigator = this;
-
-		//end of a ray
-		FVector _traceEnd = _eyeLocation + (_eyeRotation.Vector() * 5000);
-
-		//raycast
-		FHitResult _hit;
-		bool _blockingHit = GetWorld()->SweepSingleByObjectType(_hit, _eyeLocation, _traceEnd, FQuat::Identity, _objectQueryParams, _colliderShape, _querryParams);
-
-		if (_blockingHit)
-		{
-			_traceEnd = _hit.Location;
-		}
-
-		//adjust projectile rotation so it would fly right in the center of the screen where player aims and spawn projectile
-		FRotator _projectileRotation = (_traceEnd - HandLocation).Rotation();
-		FTransform _spawnTM = FTransform(_projectileRotation, HandLocation);
-		GetWorld()->SpawnActor<AActor>(ClassToSpawn, _spawnTM, _spawnParams);
-	}
-}
-
 
 void ASCharacter::PrimaryInteract()
 {
@@ -251,6 +210,8 @@ void ASCharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponent*
 			//Player death. Disable input
 			APlayerController* PC = Cast<APlayerController>(GetController());
 			DisableInput(PC);
+
+			SetLifeSpan(5.f);
 		}
 	}
 }

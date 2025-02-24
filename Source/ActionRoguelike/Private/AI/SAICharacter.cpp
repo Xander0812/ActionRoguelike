@@ -8,6 +8,8 @@
 #include "DrawDebugHelpers.h"
 #include "SInteractionComponent.h"
 #include "BrainComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 ASAICharacter::ASAICharacter()
@@ -16,7 +18,12 @@ ASAICharacter::ASAICharacter()
 
 	AttributeComp = CreateDefaultSubobject<USAttributeComponent>("AttributeComp");
 
+	ActionComp = CreateDefaultSubobject<USActionComponent>("ActionComp");
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	GetMesh()->SetGenerateOverlapEvents(true);
 
 	TimeToHitParamName = "TimeToHit";
 }
@@ -34,31 +41,43 @@ void ASAICharacter::PostInitializeComponents()
 	PawnSensingComp->OnSeePawn.AddDynamic(this, &ASAICharacter::OnPawnSeen);
 }
 
-void ASAICharacter::OnPawnSeen(APawn* Pawn)
-{
-	//Simply set player as target when bot sees it
-	SetTargetActor(Pawn);
-	DrawDebugString(GetWorld(), GetActorLocation(), "PLAYER SPOTED", nullptr, FColor::White, 4.0f, true);
-}
-
-
 void ASAICharacter::SetTargetActor(AActor* NewActor)
 {
 	AAIController* AIC = Cast<AAIController>(GetController());
 	if (AIC)
 	{
-		AIC->GetBlackboardComponent()->SetValueAsObject("TargetActor", NewActor);;
+		AIC->GetBlackboardComponent()->SetValueAsObject("TargetActor", NewActor);
 	}
+}
+AActor* ASAICharacter::GetTargetActor() const
+{
+	AAIController* AIC = Cast<AAIController>(GetController());
+	if (AIC)
+	{
+		return Cast<AActor>(AIC->GetBlackboardComponent()->GetValueAsObject("TargetActor"));
+	}
+
+	return nullptr;
 }
 
 void ASAICharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta)
 {
 	if (Delta < 0.0f)
 	{
-
+		//Died
 		if(InstagatorActor != this)
 		{
 			SetTargetActor(InstagatorActor);
+		}
+
+		if (ActiveHealthBar == nullptr) {
+			ActiveHealthBar = CreateWidget<USWorldUserWidget>(GetWorld(), HealthBarWidgetClass);
+
+			if (ActiveHealthBar)
+			{
+				ActiveHealthBar->AttachedActor = this;
+				ActiveHealthBar->AddToViewport();
+			}
 		}
 
 		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
@@ -76,9 +95,43 @@ void ASAICharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponen
 			GetMesh()->SetAllBodiesSimulatePhysics(true);
 			GetMesh()->SetCollisionProfileName("Ragdoll");
 
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			GetCharacterMovement()->DisableMovement();
+
 			//set lifespan
 			SetLifeSpan(10.f);
 		}
 	}
 }
 
+void ASAICharacter::OnPawnSeen(APawn* Pawn)
+{
+	//Simply set player as target when bot sees it
+
+	MulticastPlayerSpotted(Pawn);
+
+	SetTargetActor(Pawn);
+}
+
+
+void ASAICharacter::MulticastPlayerSpotted_Implementation(APawn* Target)
+{
+	if (Target != GetTargetActor())
+	{
+		if (TargetSpotedWidgetInstance == nullptr && ensure(TargetSpotedWidgetClass))
+		{
+
+			TargetSpotedWidgetInstance = CreateWidget<USWorldUserWidget>(GetWorld(), TargetSpotedWidgetClass);
+		}
+
+		if (TargetSpotedWidgetInstance)
+		{
+			TargetSpotedWidgetInstance->AttachedActor = this;
+
+			if (!TargetSpotedWidgetInstance->IsInViewport())
+
+				TargetSpotedWidgetInstance->AddToViewport(10);
+		}
+		//DrawDebugString(GetWorld(), GetActorLocation(), "PLAYER SPOTED", nullptr, FColor::White, 4.0f, true);
+	}
+}

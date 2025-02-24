@@ -19,17 +19,16 @@ ASProjectileBaseClass::ASProjectileBaseClass()
 	MovementComp->bRotationFollowsVelocity = true;
 	MovementComp->bInitialVelocityInLocalSpace = true;
 	MovementComp->ProjectileGravityScale = 0;
+
+	SetReplicates(true);
 }
 
 void ASProjectileBaseClass::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(OtherActor != GetInstigator() && !OtherActor->IsA(ASProjectileBaseClass::StaticClass()))
-	{
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSoundCue, GetActorLocation());
 		//We spawn Emmiter to play animation of teleportation
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExtraParticleEffect, GetActorLocation(), GetActorRotation(), true);
 		UGameplayStatics::PlayWorldCameraShake(GetWorld(), CameraShakeEffect, GetActorLocation(), /*CameraShakeInnerRadius*/ 100, /*CameraShakeOuterRadius*/ 500);
-	}
 }
 
 // Called when the game starts or when spawned

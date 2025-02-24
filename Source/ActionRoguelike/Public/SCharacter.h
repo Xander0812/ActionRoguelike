@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "SProjectileBaseClass.h"
+#include "SActionComponent.h"
 #include "SCharacter.generated.h"
 
 class UCameraComponent;
@@ -28,29 +29,7 @@ public:
 protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Effects")
-	FName HandSocketName;
-
-	UPROPERTY(VisibleAnywhere, Category = "Effects")
 	FName TimeToHitParamName;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<ASProjectileBaseClass> BaseAttackClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<ASProjectileBaseClass> BlackHoleClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<ASProjectileBaseClass> TeleportClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	UAnimMontage* AttackAnim;
-
-	/* timers to keep track of animations */
-	FTimerHandle TimerHandle_PrimaryAttack;
-
-	FTimerHandle TimerHandle_BlackHole;
-
-	FTimerHandle TimerHandle_Teleport;
 
 	/*HandLocation to spawn projectiles from*/
 	FVector HandLocation;
@@ -67,6 +46,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USInteractionComponent* InteractionComp;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USActionComponent* ActionComp;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
 
@@ -76,6 +58,9 @@ protected:
 	/* Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SprintAction;
 
 	/* Jump Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -93,6 +78,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* TeleportAbilityAction;
 
+	/* Parry Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Parry;
+
 	/* Primary Interaction Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PrimaryInteractAction;
@@ -106,23 +95,21 @@ protected:
 	/* Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+	void SprintStart();
+
+	void SprintStop();
+
 	/* Actions that are called on action to play animation and start the timer */
 	void PrimaryAttack();
 
+	void ParryAction();
+
 	void BlackHoleAbility();
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
+	float BlackHoleAbilityCost;
+
 	void TeleportAbility();
-
-	/* Actions that are called after timer stops */
-	void PrimaryAttack_TimeElapsed();
-
-	void BlackHoleAbility_TimeElapsed();
-
-	void TeleportAbility_TimeElapsed();
-
-	void StartAttackEffects(TSubclassOf<ASProjectileBaseClass> ProjectileClass);
-
-	void SpawnProjectile(TSubclassOf<AActor> ClassToSpawn);
 
 	/* Interact Action */
 	void PrimaryInteract();
@@ -132,6 +119,8 @@ protected:
 
 	virtual void PostInitializeComponents();
 
+	virtual FVector GetPawnViewLocation() const override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -139,4 +128,6 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(Exec)
+	void HealSelf(float Amount = 100);
 };

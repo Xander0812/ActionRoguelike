@@ -18,6 +18,9 @@ class ACTIONROGUELIKE_API ASHealthPotion : public ASInteractablePowerUp
 
 public:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly, Category = "Healing")
 	float HealingAmount;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Credits")
+	float HealingCreditCost;
 };

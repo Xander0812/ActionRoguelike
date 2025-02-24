@@ -33,13 +33,12 @@ EBTNodeResult::Type USBTTask_HealSelf::ExecuteTask(UBehaviorTreeComponent& Owner
 		return EBTNodeResult::Failed;
 	}
 
-	if (_blackboardComp->GetValueAsBool(OnLowHealthKey.SelectedKeyName) && _blackboardComp->GetValueAsBool(CanHealSelf.SelectedKeyName))
+	if (_blackboardComp->GetValueAsBool(OnLowHealthKey.SelectedKeyName))
 	{
 		//Start task to hide and heal self when low HP
 
 		_attributeComp->ApplyHealthChange(HealAmount, _AIPawn);
 		_blackboardComp->SetValueAsBool(OnLowHealthKey.SelectedKeyName, false);
-		_blackboardComp->SetValueAsBool(CanHealSelf.SelectedKeyName, false);
 
 		return EBTNodeResult::Succeeded;
 	}

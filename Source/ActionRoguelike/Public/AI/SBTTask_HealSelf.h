@@ -13,9 +13,6 @@ UCLASS()
 class ACTIONROGUELIKE_API USBTTask_HealSelf : public UBTTaskNode
 {
 	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere, Category = "AI")
-	FBlackboardKeySelector CanHealSelf;
 
 	UPROPERTY(EditAnywhere, Category = "AI")
 	FBlackboardKeySelector OnLowHealthKey;

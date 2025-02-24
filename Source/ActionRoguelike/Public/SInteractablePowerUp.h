@@ -27,6 +27,12 @@ public:
 
 protected:
 
+	UPROPERTY(ReplicatedUsing = "OnRep_UsePowerUp", BlueprintReadOnly) //RepNotify == ReplicatedUsing
+	bool bInteractable;
+
+	UFUNCTION()
+	void OnRep_UsePowerUp();
+
 	/*Turn off Buff interaction on use*/
 	void Deactivate();
 
@@ -34,7 +40,7 @@ protected:
 	void Reactivate();
 
 	/*Set New State: true = turned on, false = turned off*/
-	void SetPowerUpState(bool bNewPowerUpState);
+	void SetPowerUpState();
 
 	/* Timer of power up reactivation */
 	FTimerHandle TimerHandle_Reactivation;
