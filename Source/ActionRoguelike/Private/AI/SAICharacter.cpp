@@ -107,31 +107,25 @@ void ASAICharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponen
 void ASAICharacter::OnPawnSeen(APawn* Pawn)
 {
 	//Simply set player as target when bot sees it
+	if(GetTargetActor() != Pawn)
+	{
+		MulticastPlayerSpotted();
 
-	MulticastPlayerSpotted(Pawn);
-
-	SetTargetActor(Pawn);
+		SetTargetActor(Pawn);
+	}
 }
 
-
-void ASAICharacter::MulticastPlayerSpotted_Implementation(APawn* Target)
+void ASAICharacter::MulticastPlayerSpotted_Implementation()
 {
-	if (Target != GetTargetActor())
+	if (TargetSpotedWidgetInstance == nullptr && ensure(TargetSpotedWidgetClass))
 	{
-		if (TargetSpotedWidgetInstance == nullptr && ensure(TargetSpotedWidgetClass))
-		{
 
-			TargetSpotedWidgetInstance = CreateWidget<USWorldUserWidget>(GetWorld(), TargetSpotedWidgetClass);
-		}
+		TargetSpotedWidgetInstance = CreateWidget<USWorldUserWidget>(GetWorld(), TargetSpotedWidgetClass);
+	}
 
-		if (TargetSpotedWidgetInstance)
-		{
-			TargetSpotedWidgetInstance->AttachedActor = this;
-
-			if (!TargetSpotedWidgetInstance->IsInViewport())
-
-				TargetSpotedWidgetInstance->AddToViewport(10);
-		}
-		//DrawDebugString(GetWorld(), GetActorLocation(), "PLAYER SPOTED", nullptr, FColor::White, 4.0f, true);
+	if (TargetSpotedWidgetInstance)
+	{
+		TargetSpotedWidgetInstance->AttachedActor = this;
+		TargetSpotedWidgetInstance->AddToViewport(10);
 	}
 }

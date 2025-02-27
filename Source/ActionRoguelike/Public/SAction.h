@@ -30,6 +30,9 @@ class ACTIONROGUELIKE_API USAction : public UObject
 	
 protected:
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSoftObjectPtr<UTexture2D> ActionIcon;
+
 	UPROPERTY(Replicated);
 	USActionComponent* ActionComp;
 
@@ -46,6 +49,9 @@ protected:
 
 	UPROPERTY(ReplicatedUsing="OnRep_RepData")
 	FActionRepData RepData;
+
+	UPROPERTY(Replicated)
+	float TimeStarted;
 
 	UFUNCTION()
 	void OnRep_RepData();

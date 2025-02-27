@@ -22,6 +22,8 @@ public:
 
 	virtual void Interact_Implementation(APawn* InstigatorPawn);
 
+	FText GetInteractText_Implementation(APawn* InstigatorPawn);
+
 	UPROPERTY(EditAnywhere)
 	float ReactivationTime;
 

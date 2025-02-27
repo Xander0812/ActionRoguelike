@@ -53,8 +53,8 @@ protected:
 	UFUNCTION()
 	void OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayerSpotted(APawn* Target);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlayerSpotted();
 public:	
 
 	virtual void PostInitializeComponents() override;

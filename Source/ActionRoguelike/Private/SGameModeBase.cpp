@@ -16,6 +16,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "SGameplayInterface.h"
 #include <Serialization/ObjectAndNameAsStringProxyArchive.h>
+#include <../ActionRoguelike.h>
 
 
 static TAutoConsoleVariable<bool> CVarSpawnBots(TEXT("ar.SpawnBots"), true, TEXT("Enable, spawning of bots via timer"), ECVF_Cheat);
@@ -30,14 +31,13 @@ void ASGameModeBase::InitGame(const FString& MapName, const FString& Options, FS
 
 void ASGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
-	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
-
 	ASPlayerState* _playerState = NewPlayer->GetPlayerState<ASPlayerState>();
 
 	if(_playerState)
 	{
 		_playerState->LoadPlayerState(CurrentSaveGame);
 	}
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 }
 
 ASGameModeBase::ASGameModeBase()
@@ -136,9 +136,32 @@ void ASGameModeBase::OnBotSpawnQueryComplited(UEnvQueryInstanceBlueprintWrapper*
 
 	if(_locations.Num() > 0)
 	{
-		GetWorld()->SpawnActor<AActor>(MinionClass, _locations[0], FRotator::ZeroRotator, _spawnParams);
+		if(MonsterTable)
+		{
+			TArray<FMonsterInfoRow*> _rows;
+			MonsterTable->GetAllRows("", _rows);
 
-		DrawDebugSphere(GetWorld(), _locations[0], 50.f, 20, FColor::Blue, false, 60);
+			//Get Random Enemy
+			int32 _randomIndex = FMath::RandRange(0, _rows.Num() - 1);
+			FMonsterInfoRow* _selectedRow = _rows[_randomIndex];
+
+			AActor* _newBot = GetWorld()->SpawnActor<AActor>(_selectedRow->MonsterData->MonsterClass, _locations[0], FRotator::ZeroRotator, _spawnParams);
+
+			if(_newBot)
+			{
+				LogOnScreen(this, FString::Printf(TEXT("Spawned enemy: %s (%s)"), *GetNameSafe(_newBot), *GetNameSafe(_selectedRow->MonsterData)));
+
+				//Grant special actions/buffs
+				USActionComponent* _botActionComp = Cast<USActionComponent>(_newBot->GetComponentByClass(USActionComponent::StaticClass()));
+				if(_botActionComp)
+				{
+					for(TSubclassOf<USAction> _actionClass : _selectedRow->MonsterData->Actions)
+					{
+						_botActionComp->AddAction(_newBot, _actionClass);
+					}
+				}
+			}
+		}
 	}
 }
 

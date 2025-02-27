@@ -5,12 +5,45 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "EnvironmentQuery/EnvQueryInstanceBlueprintWrapper.h"
-#include <SSaveGame.h>
+#include "SSaveGame.h"
+#include "SMonsterData.h"
 #include "SGameModeBase.generated.h"
+
 
 
 class UEnvQuery;
 class UCurveFloat;
+
+/*DataTable Row for spawning monsters in game mode*/
+USTRUCT(BlueprintType)
+struct FMonsterInfoRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+
+	FMonsterInfoRow()
+	{
+		Weight = 1.f;
+		SpawnCost = 5.f;
+		KillReward = 20.f;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	USMonsterData* MonsterData;
+
+	/* Relative chance to pick this monster. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float Weight;
+
+	/* Points requiert by gamemode to spawn this unit. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float SpawnCost;
+
+	/* Amount of credits awarded to killer of this unit. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float KillReward;
+};
 
 /**
  * 
@@ -27,8 +60,12 @@ protected:
 	UPROPERTY()
 	USSaveGame* CurrentSaveGame;
 
+	/*All available monsters*/
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	TSubclassOf<AActor> MinionClass;
+	UDataTable* MonsterTable;
+
+	//UPROPERTY(EditDefaultsOnly, Category = "AI")
+	//TSubclassOf<AActor> MinionClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "PowerUp")
 	TSubclassOf<AActor> CoinPowerUpClass;

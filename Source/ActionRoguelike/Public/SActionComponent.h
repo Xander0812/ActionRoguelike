@@ -8,6 +8,8 @@
 #include "SActionComponent.generated.h"
 
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnActionStateChanged, USActionComponent*, OwningComp, USAction*, Action);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ACTIONROGUELIKE_API USActionComponent : public UActorComponent
 {
@@ -23,6 +25,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = " Actions")
 	void RemoveAction(USAction* ActionToRemove);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnActionStateChanged OnActionStarted;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnActionStateChanged OnActionStopped;
 
 	UFUNCTION(BlueprintCallable, Category = " Actions")
 	bool StartActionByName(AActor* Instigator, FName ActionName);
@@ -50,7 +58,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Actions")
 	TArray<TSubclassOf<USAction>> DefaultActions;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	TArray<USAction*> Actions;
 
 	virtual void BeginPlay() override;

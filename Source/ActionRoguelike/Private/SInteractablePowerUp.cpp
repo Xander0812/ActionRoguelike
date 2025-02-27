@@ -29,6 +29,11 @@ void ASInteractablePowerUp::Interact_Implementation(APawn* InstigatorPawn)
 	OnRep_UsePowerUp();
 }
 
+FText ASInteractablePowerUp::GetInteractText_Implementation(APawn* InstigatorPawn)
+{
+	return FText::GetEmpty();
+}
+
 void ASInteractablePowerUp::OnRep_UsePowerUp()
 {
 	Deactivate();

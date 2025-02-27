@@ -17,13 +17,12 @@ bool ASPlayerState::AddCredits(int32 Delta, AActor* InstigatorActor)
 	{
 		return false;
 	}
-
 	CreditAmount += Delta;
 
 	//LogOnScreen(this, FString::FromInt(Delta), FColor::Green);
 
-	//OnCreditsChanged.Broadcast(this, CreditAmount, Delta);
-	MulticastCreditsChanged(InstigatorActor, CreditAmount, Delta);
+	OnRep_Credits(CreditAmount - Delta);
+	//MulticastCreditsChanged(InstigatorActor, CreditAmount, Delta);
 
 	return true;
 }
@@ -39,11 +38,11 @@ bool ASPlayerState::RemoveCredits(int32 Delta, AActor* InstigatorActor)
 	{
 		return false;
 	}
-
+	
 	CreditAmount -= Delta;
 
-	//OnCreditsChanged.Broadcast(this, CreditAmount, Delta);
-	MulticastCreditsChanged(InstigatorActor, CreditAmount, Delta);
+	OnRep_Credits(CreditAmount + Delta);
+	//MulticastCreditsChanged(InstigatorActor, CreditAmount, Delta);
 
 	return true;
 }
@@ -51,6 +50,11 @@ bool ASPlayerState::RemoveCredits(int32 Delta, AActor* InstigatorActor)
 int32 ASPlayerState::GetCurrentCredits() const
 {
 	return CreditAmount;
+}
+
+void ASPlayerState::OnRep_Credits(int32 OldCredits)
+{
+	OnCreditsChanged.Broadcast(this, CreditAmount, CreditAmount - OldCredits);
 }
 
 void ASPlayerState::SavePlayerState_Implementation(USSaveGame* SaveObject)
@@ -65,14 +69,16 @@ void ASPlayerState::LoadPlayerState_Implementation(USSaveGame* SaveObject)
 {
 	if (SaveObject)
 	{
-		 CreditAmount = SaveObject->Credits;
+		AddCredits(SaveObject->Credits, this);
 	}
 }
 
+/*
 void ASPlayerState::MulticastCreditsChanged_Implementation(AActor* InstigatorActor, float NewCreditAmount, float Delta)
 {
 	OnCreditsChanged.Broadcast(this, NewCreditAmount, Delta);
 }
+*/
 
 void ASPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {

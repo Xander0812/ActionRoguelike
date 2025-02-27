@@ -16,6 +16,8 @@ class ACTIONROGUELIKE_API ASHealthPotion : public ASInteractablePowerUp
 	
 	void Interact_Implementation(APawn* InstigatorPawn) override;
 
+	FText GetInteractText_Implementation(APawn* InstigatorPawn) override;
+
 public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Healing")

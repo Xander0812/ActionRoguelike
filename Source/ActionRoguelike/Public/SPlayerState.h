@@ -20,8 +20,11 @@ class ACTIONROGUELIKE_API ASPlayerState : public APlayerState
 	GENERATED_BODY()
 	
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Replicated, Category = "Credits")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Credits", Category = "Credits")
 	int32 CreditAmount;
+
+	UFUNCTION()
+	void OnRep_Credits(int32 OldCredits);
 
 	ASPlayerState();
 public:
@@ -37,8 +40,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnCreditsChanged OnCreditsChanged;
 
-	UFUNCTION(NetMulticast, Reliable) 
-	void MulticastCreditsChanged(AActor* InstigatorActor, float NewCreditAmount, float Delta);
+	/*UFUNCTION(NetMulticast, Reliable) 
+	void MulticastCreditsChanged(AActor* InstigatorActor, float NewCreditAmount, float Delta);*/
 
 	UFUNCTION(BlueprintNativeEvent)
 	void SavePlayerState(USSaveGame* SaveObject);
