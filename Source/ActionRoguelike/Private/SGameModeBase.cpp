@@ -17,6 +17,7 @@
 #include "SGameplayInterface.h"
 #include <Serialization/ObjectAndNameAsStringProxyArchive.h>
 #include <../ActionRoguelike.h>
+#include <Engine/AssetManager.h>
 
 
 static TAutoConsoleVariable<bool> CVarSpawnBots(TEXT("ar.SpawnBots"), true, TEXT("Enable, spawning of bots via timer"), ECVF_Cheat);
@@ -25,6 +26,12 @@ static TAutoConsoleVariable<bool> CVarSpawnBots(TEXT("ar.SpawnBots"), true, TEXT
 void ASGameModeBase::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
+
+	FString _selectedSaveSlot = UGameplayStatics::ParseOption(Options, "SaveGame");
+	if(_selectedSaveSlot.Len() > 0)
+	{
+		SaveSlotName = _selectedSaveSlot;
+	}
 
 	LoadSaveGame();
 }
@@ -129,14 +136,11 @@ void ASGameModeBase::OnBotSpawnQueryComplited(UEnvQueryInstanceBlueprintWrapper*
 		return;
 	}
 
-	FActorSpawnParameters _spawnParams;
-	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
 	TArray<FVector> _locations = QueryInstance->GetResultsAsLocations();
 
 	if(_locations.Num() > 0)
 	{
-		if(MonsterTable)
+		if (MonsterTable)
 		{
 			TArray<FMonsterInfoRow*> _rows;
 			MonsterTable->GetAllRows("", _rows);
@@ -145,17 +149,43 @@ void ASGameModeBase::OnBotSpawnQueryComplited(UEnvQueryInstanceBlueprintWrapper*
 			int32 _randomIndex = FMath::RandRange(0, _rows.Num() - 1);
 			FMonsterInfoRow* _selectedRow = _rows[_randomIndex];
 
-			AActor* _newBot = GetWorld()->SpawnActor<AActor>(_selectedRow->MonsterData->MonsterClass, _locations[0], FRotator::ZeroRotator, _spawnParams);
-
-			if(_newBot)
+			UAssetManager* _assetManager = UAssetManager::GetIfValid();
+			if(_assetManager)
 			{
-				LogOnScreen(this, FString::Printf(TEXT("Spawned enemy: %s (%s)"), *GetNameSafe(_newBot), *GetNameSafe(_selectedRow->MonsterData)));
+				LogOnScreen(this, "Loading monster...", FColor::Green);
+
+				TArray<FName> _bundles;
+				FStreamableDelegate _streamDelegate = FStreamableDelegate::CreateUObject(this, &ASGameModeBase::OnMonsterLoaded, _selectedRow->MonsterID, _locations[0]);
+				_assetManager->LoadPrimaryAsset(_selectedRow->MonsterID, _bundles, _streamDelegate, -1);
+			}
+		}
+	}
+}
+
+void ASGameModeBase::OnMonsterLoaded(FPrimaryAssetId LoadedId, FVector SpawnLocation)
+{
+	LogOnScreen(this, "Fineshed monster loading!!", FColor::Green);
+
+	FActorSpawnParameters _spawnParams;
+	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	UAssetManager* _assetManager = UAssetManager::GetIfValid();
+	if (_assetManager)
+	{
+		USMonsterData* _monsterData = Cast<USMonsterData>(_assetManager->GetPrimaryAssetObject(LoadedId));
+		if (_monsterData)
+		{
+			AActor* _newBot = GetWorld()->SpawnActor<AActor>(_monsterData->MonsterClass, SpawnLocation, FRotator::ZeroRotator, _spawnParams);
+
+			if (_newBot)
+			{
+				LogOnScreen(this, FString::Printf(TEXT("Spawned enemy: %s (%s)"), *GetNameSafe(_newBot), *GetNameSafe(_monsterData)));
 
 				//Grant special actions/buffs
 				USActionComponent* _botActionComp = Cast<USActionComponent>(_newBot->GetComponentByClass(USActionComponent::StaticClass()));
-				if(_botActionComp)
+				if (_botActionComp && !_monsterData->Actions.IsEmpty())
 				{
-					for(TSubclassOf<USAction> _actionClass : _selectedRow->MonsterData->Actions)
+					for (TSubclassOf<USAction> _actionClass : _monsterData->Actions)
 					{
 						_botActionComp->AddAction(_newBot, _actionClass);
 					}

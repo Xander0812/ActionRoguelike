@@ -30,7 +30,7 @@ public:
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	USMonsterData* MonsterData;
+	FPrimaryAssetId MonsterID;
 
 	/* Relative chance to pick this monster. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -106,6 +106,8 @@ protected:
 
 	UFUNCTION()
 	void OnBotSpawnQueryComplited(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
+
+	void OnMonsterLoaded(FPrimaryAssetId LoadedId, FVector SpawnLocation);
 
 	UFUNCTION()
 	void OnPowerUpSpawnQueryComplited(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);

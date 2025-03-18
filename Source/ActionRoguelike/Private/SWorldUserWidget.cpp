@@ -15,24 +15,30 @@ void USWorldUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	{
 		RemoveFromParent();
 
-		UE_LOG(LogTemp, Warning, TEXT("AttachedActor no longer valid, removing health widget"));
+		UE_LOG(LogTemp, Warning, TEXT("AttachedActor no longer valid, removing widget"));
 
 		return;
 	}
 
 	FVector2D _screenPosition;
-	if(UGameplayStatics::ProjectWorldToScreen(GetOwningPlayer(), AttachedActor->GetActorLocation() + WorldOffset, _screenPosition))
+	bool bIsOnScreen = UGameplayStatics::ProjectWorldToScreen(GetOwningPlayer(), AttachedActor->GetActorLocation() + WorldOffset, _screenPosition);
+
+	
+	if (bIsOnScreen)
 	{
-		//if (AttachedActor->GetActorLocation()){
-			float _scale = UWidgetLayoutLibrary::GetViewportScale(this);
+		float _scale = UWidgetLayoutLibrary::GetViewportScale(this);
 
-			_screenPosition /= _scale;
+		_screenPosition /= _scale;
 
-			if (ParentSizeBox)
-			{
-				ParentSizeBox->SetRenderTranslation(_screenPosition);
-			}
-		//}
+		if (ParentSizeBox)
+		{
+			ParentSizeBox->SetRenderTranslation(_screenPosition);
+		}
+
 	}
 
+	if(ParentSizeBox)
+	{
+		ParentSizeBox->SetVisibility(bIsOnScreen ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+	}
 }

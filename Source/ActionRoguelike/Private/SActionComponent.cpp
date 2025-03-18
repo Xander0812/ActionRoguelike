@@ -7,6 +7,9 @@
 #include <Net/UnrealNetwork.h>
 #include "Engine/ActorChannel.h"
 
+
+DECLARE_CYCLE_STAT(TEXT("StartActionByName"), STAT_StartActionByName, STATGROUP_STANFORD);
+
 USActionComponent::USActionComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -27,6 +30,21 @@ void USActionComponent::BeginPlay()
 			AddAction(GetOwner(), _actionClass);
 		}
 	}
+}
+
+void USActionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	//Stop ALL actions
+	TArray<USAction*> _actionsCopy = Actions;
+	for(USAction* _action : _actionsCopy)
+	{
+		if (_action && _action->IsActionRunning())
+		{
+			_action->StopAction(GetOwner());
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 
@@ -86,6 +104,8 @@ void USActionComponent::RemoveAction(USAction* ActionToRemove)
 
 bool USActionComponent::StartActionByName(AActor* Instigator, FName ActionName)
 {
+	SCOPE_CYCLE_COUNTER(STAT_StartActionByName);
+
 	for(USAction* _action:Actions)
 	{
 		if(_action && _action->ActionName == ActionName)
@@ -100,6 +120,8 @@ bool USActionComponent::StartActionByName(AActor* Instigator, FName ActionName)
 		    //Is client
 			if(!GetOwner()->HasAuthority())
 				ServerStartAction(Instigator, ActionName);
+
+			TRACE_BOOKMARK(TEXT("StartAction::%s"), *GetNameSafe(_action))
 
 			_action->StartAction(Instigator);
 			return true;

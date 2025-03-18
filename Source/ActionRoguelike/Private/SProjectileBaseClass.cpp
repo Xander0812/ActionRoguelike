@@ -20,7 +20,7 @@ ASProjectileBaseClass::ASProjectileBaseClass()
 	MovementComp->bInitialVelocityInLocalSpace = true;
 	MovementComp->ProjectileGravityScale = 0;
 
-	SetReplicates(true);
+	bReplicates = true;
 }
 
 void ASProjectileBaseClass::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

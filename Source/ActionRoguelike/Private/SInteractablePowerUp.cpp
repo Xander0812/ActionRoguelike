@@ -20,7 +20,8 @@ ASInteractablePowerUp::ASInteractablePowerUp()
 
 	bInteractable = true;
 
-	SetReplicates(true);
+	//SetReplicates(true);
+	bReplicates = true;
 }
 
 void ASInteractablePowerUp::Interact_Implementation(APawn* InstigatorPawn)
