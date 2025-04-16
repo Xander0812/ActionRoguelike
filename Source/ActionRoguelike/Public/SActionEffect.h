@@ -17,7 +17,10 @@ class ACTIONROGUELIKE_API USActionEffect : public USAction
 protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
-	float Duration;
+	float MaxDuration;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
+	float TickingDuration;
 
 	/* Time between 'ticks' to apply effect*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
@@ -29,11 +32,18 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Effect")
 	void ExecutePeriodEffect(AActor* Instigator);
 
+	
+
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	float GetTimeRemaining() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	void AddTime();
+
+	UFUNCTION()
+	void TimerTick(AActor* Instigator);
 
 	void StartAction_Implementation(AActor* Instigator) override;
 	void StopAction_Implementation(AActor* Instigator) override;

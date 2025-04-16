@@ -10,18 +10,19 @@
 USActionEffect::USActionEffect()
 {
 	bAutoStart = true;
+
+	TickingDuration = MaxDuration;
 }
 
 void USActionEffect::StartAction_Implementation(AActor* Instigator)
 {
 	Super::StartAction_Implementation(Instigator);
 
-	if(Duration>0.f)
+	if(MaxDuration > 0.f)
 	{
 		FTimerDelegate _timerDelegateDuration;
-		_timerDelegateDuration.BindUFunction(this, "StopAction", Instigator);
-
-		GetWorld()->GetTimerManager().SetTimer(DurationHandle, _timerDelegateDuration, Duration, false);
+		_timerDelegateDuration.BindUFunction(this, "TimerTick", Instigator);
+		GetWorld()->GetTimerManager().SetTimer(DurationHandle, _timerDelegateDuration, 0.1, true);
 	}
 
 	if (Period > 0.f)
@@ -53,16 +54,32 @@ void USActionEffect::StopAction_Implementation(AActor* Instigator)
 	}
 }
 
+void USActionEffect::TimerTick(AActor* Instigator)
+{
+	TickingDuration -= 0.1f;
+
+	if(TickingDuration <= 0)
+	{
+		StopAction(Instigator);
+	}
+}
+
+void USActionEffect::AddTime()
+{
+	TickingDuration = MaxDuration;
+}
+
 float USActionEffect::GetTimeRemaining() const
 {
-	AGameStateBase* _gs = GetWorld()->GetGameState<AGameStateBase>();
+	/*AGameStateBase* _gs = GetWorld()->GetGameState<AGameStateBase>();
 
 	if(_gs)
 	{
-		float _endTime = TimeStarted + Duration;
+		float _endTime = TimeStarted + MaxDuration;
 		return _endTime - _gs->GetServerWorldTimeSeconds();
 	}
-	return Duration;
+	return MaxDuration;*/
+	return TickingDuration;
 }
 
 void USActionEffect::ExecutePeriodEffect_Implementation(AActor* Instigator)

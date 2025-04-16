@@ -30,10 +30,24 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	float AttackAnimDelay;
 
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	int ProjectileArraySize;
+
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
+	TArray<ASProjectileBaseClass*> ProjectileArray;
+
 	UFUNCTION()
-	void AttackDelay_Elapsed(ACharacter* InstagatorCharacter);
+	void AttackDelay_Elapsed(ACharacter* InstigatorCharacter);
+
+	UFUNCTION()
+	FTransform GetProjectileDirection(ACharacter* InstagitorCharacter);
+
+	UFUNCTION()
+	ASProjectileBaseClass* GetFreeProjectile();
 
 public:
+
+	void Initialize(USActionComponent* NewActionComp) override;
 
 	virtual void StartAction_Implementation(AActor* Instigator) override;
 

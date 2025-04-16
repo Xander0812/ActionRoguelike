@@ -63,7 +63,7 @@ void ASAICharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponen
 {
 	if (Delta < 0.0f)
 	{
-		//Died
+		
 		if(InstagatorActor != this)
 		{
 			SetTargetActor(InstagatorActor);
@@ -79,8 +79,9 @@ void ASAICharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponen
 			}
 		}
 
-		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
+		AttributeComp->DynamicOverlayMaterial->SetScalarParameterValue(TimeToHitParamName, GetWorld()->TimeSeconds);
 
+		//Died
 		if (NewHealth <= 0.0f)
 		{
 			//stop BT

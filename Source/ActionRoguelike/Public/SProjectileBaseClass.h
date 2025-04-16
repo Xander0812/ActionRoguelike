@@ -9,6 +9,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "SAttributeComponent.h"
 #include "Sound/SoundCue.h"
+#include "Components/AudioComponent.h"
 #include <Kismet/GameplayStatics.h>
 #include "SProjectileBaseClass.generated.h"
 
@@ -32,12 +33,21 @@ public:
 
 	//particle effect based visualisation of projectiles from downloaded assets
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UParticleSystemComponent* BaseParticleEffect;
+	UParticleSystemComponent* BaseParticleEffectComp;
 
-	UPROPERTY(EditAnywhere, Category = "VFX")
-	UParticleSystem* ExtraParticleEffect;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UParticleSystemComponent* ImpactParticleEffectComp;
 
-	/*VFX of projectile casting*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UParticleSystemComponent* ExtraParticleEffectComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UAudioComponent* AudioComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UAudioComponent* ImpactAudioComponent;
+
+	/* VFX of projectile casting. Initiliser gets it as reference */
 	UPROPERTY(EditAnywhere, Category = "VFX")
 	UParticleSystem* CastParticleEffect;
 
@@ -50,6 +60,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = "SFX")
 	USoundCue* ImpactSoundCue;
 
+	UPROPERTY(EditAnywhere, Category = "Projectile")
+	float ProjectileLifetime;
+
+	FTimerHandle TimerHandle_ProjectileLifetime;
+
+	UFUNCTION()
+	virtual void DeactivateProjectile();
+
+	UFUNCTION()
+	virtual void ActivateProjectile();
+
+	UFUNCTION()
+	bool IsProjectileActive() const;
 
 	UFUNCTION()
 	virtual void OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

@@ -40,11 +40,23 @@ public:
 
 	USActionComponent();
 
-	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	UFUNCTION(BlueprintCallable, Category = "Actions")
 	static USActionComponent* GetActionsComponent(AActor* FromActor);
 
-	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool HasAction(TSubclassOf<USAction> InputAction);
+
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	USAction* GetAction(TSubclassOf<USAction> InputAction);
+
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	USAction* GetActionByName(FName ActionName);
+
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool HasActionByName(FName ActionName);
+
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	static USActionComponent* GetActionComponent(AActor* FromActor);
 
 protected:
 

@@ -19,7 +19,7 @@ void ASCreditCoinPowerUp::Interact_Implementation(APawn* InstigatorPawn)
 
 	if (ASPlayerState* _playerState = InstigatorPawn->GetPlayerState<ASPlayerState>())
 	{
-		_playerState->AddCredits(CreditsRewardAmount, InstigatorPawn);
+		_playerState->AddCredits(CreditsRewardAmount);
 
 		Super::Interact_Implementation(InstigatorPawn);
 	}

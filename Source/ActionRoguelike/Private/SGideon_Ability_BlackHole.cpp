@@ -2,6 +2,8 @@
 
 
 #include "SGideon_Ability_BlackHole.h"
+#include "SGameplayFunctionLibrary.h"
+
 
 ASGideon_Ability_BlackHole::ASGideon_Ability_BlackHole()
 {
@@ -26,20 +28,38 @@ void ASGideon_Ability_BlackHole::BeginPlay()
 	GetWorldTimerManager().SetTimer(TimerHandle_FlyTime, this, &ASGideon_Ability_BlackHole::DestroyOnAnimationEnd, 5.0f);
 }
 
+void ASGideon_Ability_BlackHole::DeactivateProjectile()
+{
+	Super::DeactivateProjectile();
+	RadialForceComp->Deactivate();
+}
+
+void ASGideon_Ability_BlackHole::ActivateProjectile()
+{
+	Super::ActivateProjectile();
+	RadialForceComp->Activate();
+}
+
 void ASGideon_Ability_BlackHole::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	Super::OnComponentOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
 	//Custom black hole ability projectile overlap behavior
 	//We just destroy object that are too close
+	if (OtherActor == GetInstigator())
+	{
+		return;
+	}
 
 	if(OtherActor && OtherComp->GetCollisionObjectType() == ECollisionChannel::ECC_PhysicsBody)
 	{
 		OtherActor->Destroy();
 	}
+
+	USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, 999, SweepResult);
 }
 
 void ASGideon_Ability_BlackHole::DestroyOnAnimationEnd()
 {
-	Destroy();
+	DeactivateProjectile();
 }

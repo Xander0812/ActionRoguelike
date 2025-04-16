@@ -4,8 +4,9 @@
 #include "SActionComponent.h"
 #include "SAction.h"
 #include "../ActionRoguelike.h"
-#include <Net/UnrealNetwork.h>
+#include "Net/UnrealNetwork.h"
 #include "Engine/ActorChannel.h"
+#include "SActionEffect.h"
 
 
 DECLARE_CYCLE_STAT(TEXT("StartActionByName"), STAT_StartActionByName, STATGROUP_STANFORD);
@@ -78,9 +79,25 @@ void USActionComponent::AddAction(AActor* Instigator,TSubclassOf<USAction> Actio
 		return;
 	}
 
+	if(HasAction(ActionClass))
+	{
+		if(ActionClass->IsChildOf(USActionEffect::StaticClass()))
+		{
+			USActionEffect* _ae = Cast<USActionEffect>(GetAction(ActionClass));
+
+			if (_ae) 
+			{
+				_ae->AddTime();
+				return;
+			}
+		}
+	}
+
 	USAction* _newAction = NewObject<USAction>(GetOwner(), ActionClass);
 	if(ensure(_newAction))
 	{
+		//prevent from adding new actions
+		
 		_newAction->Initialize(this);
 
 		Actions.Add(_newAction);
@@ -165,6 +182,44 @@ bool USActionComponent::HasAction(TSubclassOf<USAction> InputAction)
 	return false;
 }
 
+bool USActionComponent::HasActionByName(FName ActionName)
+{
+	for (USAction* _action : Actions)
+	{
+		if (_action && _action->ActionName == ActionName)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+USAction* USActionComponent::GetAction(TSubclassOf<USAction> InputAction)
+{
+	for (USAction* _action : Actions)
+	{
+		if (_action && _action->IsA(InputAction))
+		{
+			return _action;
+		}
+	}
+	return nullptr;
+}
+
+USAction* USActionComponent::GetActionByName(FName ActionName)
+{
+	for (USAction* _action : Actions)
+	{
+		if (_action && _action->ActionName == ActionName)
+		{
+			return _action;
+		}
+	}
+
+	return nullptr;
+}
+
 USActionComponent* USActionComponent::GetActionsComponent(AActor* FromActor)
 {
 	if (FromActor)
@@ -175,6 +230,15 @@ USActionComponent* USActionComponent::GetActionsComponent(AActor* FromActor)
 	return nullptr;
 }
 
+USActionComponent* USActionComponent::GetActionComponent(AActor* FromActor)
+{
+	if (FromActor)
+	{
+		return Cast<USActionComponent>(FromActor->GetComponentByClass(USActionComponent::StaticClass()));
+	}
+
+	return nullptr;
+}
 
 void USActionComponent::ServerStartAction_Implementation(AActor* Instigator, FName ActionName)
 {

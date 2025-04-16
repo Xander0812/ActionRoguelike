@@ -55,8 +55,6 @@ class ACTIONROGUELIKE_API ASGameModeBase : public AGameModeBase
 
 protected:
 
-	FString SaveSlotName;
-
 	UPROPERTY()
 	USSaveGame* CurrentSaveGame;
 
@@ -129,9 +127,4 @@ public:
 
 	UFUNCTION(Exec)
 	void KillAll();
-
-	UFUNCTION(BlueprintCallable, Category = "SaveGame")
-	void WriteSaveGame();
-
-	void LoadSaveGame();
 };

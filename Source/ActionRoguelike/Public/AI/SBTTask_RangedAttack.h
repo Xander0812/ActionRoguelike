@@ -27,8 +27,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "AI")
 	float MaxBulletSpreadYaw;
 
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	UAnimMontage* AttackAnim;
+
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	UParticleSystem* ParticleEffect;
+
 	UPROPERTY(EditAnywhere, Category = "AI")
 	TSubclassOf<AActor> ProjectileClass;
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+	FName ShootSocketName;
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 

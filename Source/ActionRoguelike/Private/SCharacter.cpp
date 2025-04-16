@@ -37,6 +37,7 @@ ASCharacter::ASCharacter()
 	TimeToHitParamName = "TimeToHit";
 
 	BlackHoleAbilityCost = 10;
+	RageGainPerHit = 2;
 }
 
 
@@ -175,7 +176,7 @@ void ASCharacter::PrimaryAttack()
 
 void ASCharacter::BlackHoleAbility()
 {
-	if(AttributeComp->ApplyRageChange(-BlackHoleAbilityCost, this))
+	if(AttributeComp->ApplyRageChange(-BlackHoleAbilityCost, this) && ActionComp->HasActionByName("BlackHoleAbility"))
 	{
 		ActionComp->StartActionByName(this, "BlackHoleAbility");
 	}
@@ -199,11 +200,12 @@ void ASCharacter::PrimaryInteract()
 	}
 }
 
-void ASCharacter::OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta)
+void ASCharacter::OnHealthChanged(AActor* InstigatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta)
 {
 	if(Delta < 0.0f)
 	{
-		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
+		AttributeComp->ApplyRageChange(RageGainPerHit, InstigatorActor);
+		AttributeComp->DynamicOverlayMaterial->SetScalarParameterValue(TimeToHitParamName, GetWorld()->TimeSeconds);
 
 		if (NewHealth <= 0.0f)
 		{

@@ -58,7 +58,7 @@ protected:
 
 public:
 
-	void Initialize(USActionComponent* NewActionComp);
+	virtual void Initialize(USActionComponent* NewActionComp);
 
 	UPROPERTY(EditDefaultsOnly, Category ="Action")
 	bool bAutoStart;

@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
-#include <SSaveGame.h>
 #include "SPlayerState.generated.h"
 
-
+class USSaveGame;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnCreditsChanged, ASPlayerState*, PlayerState, int32, NewCredits, int32, Delta);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRecordTimeChanged, ASPlayerState*, PlayerState, float, NewTime, float, OldRecord);
+
 
 /**
  * 
@@ -20,19 +22,28 @@ class ACTIONROGUELIKE_API ASPlayerState : public APlayerState
 	GENERATED_BODY()
 	
 protected:
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Credits", Category = "Credits")
 	int32 CreditAmount;
+
+	UPROPERTY(BlueprintReadOnly)
+	float PersonalRecordTime;
 
 	UFUNCTION()
 	void OnRep_Credits(int32 OldCredits);
 
 	ASPlayerState();
+
 public:
-	UFUNCTION(BlueprintCallable, Category = "Credits")
-	bool AddCredits(int32 Delta, AActor* InstigatorActor);
+	/* Checks current record and only sets if better time was passed in. */
+	UFUNCTION(BlueprintCallable)
+	bool UpdatePersonalRecord(float NewTime);
 
 	UFUNCTION(BlueprintCallable, Category = "Credits")
-	bool RemoveCredits(int32 Delta, AActor* InstigatorActor);
+	bool AddCredits(int32 Delta);
+
+	UFUNCTION(BlueprintCallable, Category = "Credits")
+	bool RemoveCredits(int32 Delta);
 
 	UFUNCTION(BlueprintCallable, Category = "Credits")
 	int32 GetCurrentCredits() const;
@@ -40,8 +51,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnCreditsChanged OnCreditsChanged;
 
-	/*UFUNCTION(NetMulticast, Reliable) 
-	void MulticastCreditsChanged(AActor* InstigatorActor, float NewCreditAmount, float Delta);*/
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnRecordTimeChanged OnRecordTimeChanged;
 
 	UFUNCTION(BlueprintNativeEvent)
 	void SavePlayerState(USSaveGame* SaveObject);

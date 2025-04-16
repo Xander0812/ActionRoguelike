@@ -8,11 +8,11 @@
 
 ASGideon_BasicAttack::ASGideon_BasicAttack()
 {
-	MovementComp->InitialSpeed = 1500;
+	//MovementComp->InitialSpeed = 1500;
 
 	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASGideon_BasicAttack::OnComponentOverlap);
 
-	InitialLifeSpan = 10.f;
+	//InitialLifeSpan = 10.f;
 }
 
 void ASGideon_BasicAttack::OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -36,12 +36,12 @@ void ASGideon_BasicAttack::OnComponentOverlap(UPrimitiveComponent* OverlappedCom
 
 		if (USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, ProjectileDamage, SweepResult))
 		{
-			Destroy();
-
-			if(_actionComp && HasAuthority())
+			if(_actionComp && HasAuthority() && BurningActionClass)
 			{
 				_actionComp->AddAction(GetInstigator(), BurningActionClass);
 			}
 		}
+
+		DeactivateProjectile();
 	}
 }

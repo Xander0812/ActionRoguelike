@@ -37,7 +37,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	USpringArmComponent* SpringArmComp;
 
-	UPROPERTY(VisibleAnywhere, Category = "Camera")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Camera")
 	UCameraComponent* CameraComp;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -109,13 +109,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
 	float BlackHoleAbilityCost;
 
+	UPROPERTY(EditAnywhere, Category = "Attributes")
+	float RageGainPerHit;
+
 	void TeleportAbility();
 
 	/* Interact Action */
 	void PrimaryInteract();
 
 	UFUNCTION()
-	void OnHealthChanged(AActor* InstagatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
+	void OnHealthChanged(AActor* InstigatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
 
 	virtual void PostInitializeComponents();
 

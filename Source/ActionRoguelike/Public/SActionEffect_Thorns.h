@@ -17,14 +17,18 @@ class ACTIONROGUELIKE_API USActionEffect_Thorns : public USActionEffect
 	GENERATED_BODY()
 	
 protected:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Thorns")
+	float ReflectFraction;
+
+	UFUNCTION()
+	void OnHealthChanged(AActor* InstigatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
+
+public:
+
 	USActionEffect_Thorns();
 
 	void StartAction_Implementation(AActor* Instigator) override;
 
 	void StopAction_Implementation(AActor* Instigator) override;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
-	float ReflectFraction;
-
-	void OnHealthChanged(AActor* InstigatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
 };

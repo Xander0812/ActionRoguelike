@@ -33,6 +33,10 @@ public:
 	/* Spawn particles before teleoirting */
 	void PlayTeleportParticle();
 
+	void DeactivateProjectile() override;
+
+	void ActivateProjectile() override;
+
 	/* Basic on hit function */
 	void OnComponentOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 

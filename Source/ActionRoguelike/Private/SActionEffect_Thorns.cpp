@@ -11,7 +11,7 @@ USActionEffect_Thorns::USActionEffect_Thorns()
 {
 	ReflectFraction = 0.2f;
 
-	Duration = 0.0f;
+	MaxDuration = 0.0f;
 	Period = 0.0f;
 }
 
@@ -46,6 +46,8 @@ void USActionEffect_Thorns::OnHealthChanged(AActor* InstigatorActor, USAttribute
 	//Damage Only
 	if(Delta < 0.0f && _owningActor != InstigatorActor)
 	{
+		
+
 		//Round to nearest number
 		int32 _reflectedAmount = FMath::RoundToInt(Delta * ReflectFraction);
 
@@ -53,9 +55,10 @@ void USActionEffect_Thorns::OnHealthChanged(AActor* InstigatorActor, USAttribute
 		{
 			return;
 		}
-
+		// Flip to positive, so we don't end up healing ourselves when passed into damage
 		_reflectedAmount = FMath::Abs(_reflectedAmount);
 
+		// Return damage to sender
 		USGameplayFunctionLibrary::ApplyDamage(_owningActor, InstigatorActor, _reflectedAmount);
 	}
 }

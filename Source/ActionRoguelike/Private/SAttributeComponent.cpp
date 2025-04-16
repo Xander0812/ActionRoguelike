@@ -14,7 +14,8 @@ USAttributeComponent::USAttributeComponent()
 
 	MaxRage = 30;
 	CurrentRage = 0;
-	RageGainPerHit = 1;
+
+	MovementSpeedBuffBonus = 0;
 
 	SetIsReplicatedByDefault(true);
 }
@@ -61,9 +62,6 @@ bool USAttributeComponent::ApplyHealthChange(float Delta, AActor* InstigatorActo
 				GM->OnActorKilled(GetOwner(), InstigatorActor);
 			}
 		}
-
-		ApplyRageChange(RageGainPerHit, InstigatorActor);
-
 	}
 
 	return _actualDelta !=0;
@@ -144,6 +142,51 @@ bool USAttributeComponent::IsFullRage() const
 	return CurrentRage == MaxRage;
 }
 
+/* Movement Speed */
+
+void USAttributeComponent::ApplySpeedChange(AActor* InstigatorActor, float Delta)
+{
+	CurrentMovementSpeed = DefaultMovementSpeed + (DefaultMovementSpeed * MovementSpeedBuffBonus) + (DefaultMovementSpeed * SprintSpeedBonus);
+
+	MulticastMovementSpeedChanged(InstigatorActor, CurrentMovementSpeed, Delta);
+}
+
+bool USAttributeComponent::ActivateSpeedBoost(float SpeedModifier)
+{
+	MovementSpeedBuffBonus = SpeedModifier;
+
+	ApplySpeedChange(GetOwner(), SpeedModifier);
+
+	return true;
+}
+
+bool USAttributeComponent::DeactivateSpeedBoost()
+{
+	MovementSpeedBuffBonus = 0;
+
+	ApplySpeedChange(GetOwner(), 0);
+
+	return true;
+}
+
+bool USAttributeComponent::ActivateSprint(float SpeedModifier)
+{
+	SprintSpeedBonus = SpeedModifier;
+
+	ApplySpeedChange(GetOwner(), SpeedModifier);
+
+	return true;
+}
+
+bool USAttributeComponent::DeactivateSprint()
+{
+	SprintSpeedBonus = 0;
+
+	ApplySpeedChange(GetOwner(), 0);
+
+	return true;
+}
+
 USAttributeComponent* USAttributeComponent::GetAttributes(AActor* FromActor)
 {
 	if(FromActor)
@@ -166,6 +209,11 @@ void USAttributeComponent::MulticastRageChanged_Implementation(AActor* Instigato
 	OnRageChanged.Broadcast(InstigatorActor, this, NewRage, Delta);
 }
 
+void USAttributeComponent::MulticastMovementSpeedChanged_Implementation(AActor* InstigatorActor, float NewSpeed, float Delta)
+{
+	OnSpeedChanged.Broadcast(InstigatorActor, this, NewSpeed, Delta);
+}
+
 void USAttributeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -176,4 +224,8 @@ void USAttributeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(USAttributeComponent, CurrentRage);
 	DOREPLIFETIME_CONDITION(USAttributeComponent, MaxRage, COND_OwnerOnly)
 
+	DOREPLIFETIME(USAttributeComponent, MovementSpeedBuffBonus);
+	DOREPLIFETIME(USAttributeComponent, SprintSpeedBonus);
+	DOREPLIFETIME(USAttributeComponent, CurrentMovementSpeed);
+	DOREPLIFETIME_CONDITION(USAttributeComponent, DefaultMovementSpeed, COND_OwnerOnly)
 }

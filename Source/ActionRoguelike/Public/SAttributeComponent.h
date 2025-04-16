@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
 #include "Components/ActorComponent.h"
-
+#include "GameplayTagContainer.h"
 #include "SAttributeComponent.generated.h"
+
 
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnHealthChanged, AActor*, InstigatorActor, USAttributeComponent*, OwningComp, float, NewHealth, float, Delta);
@@ -45,15 +45,31 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Replicated, Category = "Attributes")
 	float MaxRage;
+	
+	/*Movement Speed*/
 
-	UPROPERTY(EditAnywhere, Category = "Attributes")
-	float RageGainPerHit;
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Attributes")
+	float MovementSpeedBuffBonus;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Attributes")
+	float SprintSpeedBonus;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Attributes")
+	float CurrentMovementSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Replicated, Category = "Attributes")
+	float DefaultMovementSpeed;
+
+
 
 	UFUNCTION(NetMulticast, Reliable) //@FIXME: mark as unreliable once we moved the 'state' out of SCharacter
 	void MulticastHealthChanged(AActor* InstigatorActor, float NewHealth, float Delta);
 
 	UFUNCTION(NetMulticast, Unreliable) //@FIXME: mark as unreliable once we moved the 'state' out of SCharacter
 	void MulticastRageChanged(AActor* InstigatorActor, float NewRage, float Delta);
+
+	UFUNCTION(NetMulticast, Unreliable) //@FIXME: mark as unreliable once we moved the 'state' out of SCharacter
+	void MulticastMovementSpeedChanged(AActor* InstigatorActor, float NewSpeed, float Delta);
 	// HealthMax, Stamina, Strength
 
 public:	
@@ -63,6 +79,11 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Attributes")
 	FOnAttributeChanged OnHealthChanged;
+
+	UPROPERTY(BlueprintReadWrite, Category = "VFX")
+	UMaterialInstanceDynamic* DynamicOverlayMaterial;
+
+	/* Health */
 
 	/*Apply healing or damage*/
 	UFUNCTION(BlueprintCallable)
@@ -88,7 +109,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetHealthPercent() const;
 
-	/*Rage*/
+	/* Rage */
 
 	UPROPERTY(BlueprintAssignable)
 	FOnAttributeChanged OnRageChanged;
@@ -108,4 +129,26 @@ public:
 	/*Is called Object on Max Rage?*/
 	UFUNCTION(BlueprintCallable)
 	bool IsFullRage() const;
+
+	/* Movement Speed */
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeChanged OnSpeedChanged;
+
+	UFUNCTION(BlueprintCallable)
+	void ApplySpeedChange(AActor* InstigatorActor, float Delta);
+
+	UFUNCTION(BlueprintCallable)
+	bool ActivateSpeedBoost(float SpeedModifier);
+
+	UFUNCTION(BlueprintCallable)
+	bool DeactivateSpeedBoost();
+
+	UFUNCTION(BlueprintCallable)
+	bool ActivateSprint(float SpeedModifier);
+
+	UFUNCTION(BlueprintCallable)
+	bool DeactivateSprint();
+
+
 };

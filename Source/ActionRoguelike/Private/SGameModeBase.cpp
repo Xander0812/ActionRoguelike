@@ -18,40 +18,29 @@
 #include <Serialization/ObjectAndNameAsStringProxyArchive.h>
 #include <../ActionRoguelike.h>
 #include <Engine/AssetManager.h>
+#include "SSaveGameSubsystem.h"
 
 
 static TAutoConsoleVariable<bool> CVarSpawnBots(TEXT("ar.SpawnBots"), true, TEXT("Enable, spawning of bots via timer"), ECVF_Cheat);
+
+ASGameModeBase::ASGameModeBase()
+{
+	BotSpawnTimerInterval = 2.0f;
+
+	PlayerStateClass = ASPlayerState::StaticClass();
+}
 
 
 void ASGameModeBase::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
-	FString _selectedSaveSlot = UGameplayStatics::ParseOption(Options, "SaveGame");
-	if(_selectedSaveSlot.Len() > 0)
-	{
-		SaveSlotName = _selectedSaveSlot;
-	}
+	// (Save/Load logic moved into new SaveGameSubsystem)
+	USSaveGameSubsystem* _sg = GetGameInstance()->GetSubsystem<USSaveGameSubsystem>();
 
-	LoadSaveGame();
-}
-
-void ASGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
-{
-	ASPlayerState* _playerState = NewPlayer->GetPlayerState<ASPlayerState>();
-
-	if(_playerState)
-	{
-		_playerState->LoadPlayerState(CurrentSaveGame);
-	}
-	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
-}
-
-ASGameModeBase::ASGameModeBase()
-{
-	BotSpawnTimerInterval = 2.0f;
-
-	SaveSlotName = "SaveGame01";
+	// Optional slot name (Falls back to slot specified in SaveGameSettings class/INI otherwise)
+	//FString _selectedSaveSlot = UGameplayStatics::ParseOption(Options, "SaveGame");
+	_sg->LoadSaveGame();
 }
 
 void ASGameModeBase::StartPlay()
@@ -63,6 +52,19 @@ void ASGameModeBase::StartPlay()
 	//Actual amount of bots and whether it's allowed to spawn determined by spawn logic later
 
 	GetWorldTimerManager().SetTimer(TimerHandle_SpawnBots, this, &ASGameModeBase::SpawnBotTimerElapsed, BotSpawnTimerInterval, true);
+}
+
+void ASGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+	// Calling Before Super:: so we set variables before 'beginplayingstate' is called in PlayerController (which is where we instantiate UI)
+	USSaveGameSubsystem* _sg = GetGameInstance()->GetSubsystem<USSaveGameSubsystem>();
+	_sg->HandleStartingNewPlayer(NewPlayer);
+
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+
+	// Now we're ready to override spawn location
+	// Alternatively we could override core spawn location to use store locations immediately (skipping the whole 'find player start' logic)
+	_sg->OverrideSpawnTransform(NewPlayer);
 }
 
 void ASGameModeBase::KillAll()
@@ -152,7 +154,7 @@ void ASGameModeBase::OnBotSpawnQueryComplited(UEnvQueryInstanceBlueprintWrapper*
 			UAssetManager* _assetManager = UAssetManager::GetIfValid();
 			if(_assetManager)
 			{
-				LogOnScreen(this, "Loading monster...", FColor::Green);
+				//LogOnScreen(this, "Loading monster...", FColor::Green);
 
 				TArray<FName> _bundles;
 				FStreamableDelegate _streamDelegate = FStreamableDelegate::CreateUObject(this, &ASGameModeBase::OnMonsterLoaded, _selectedRow->MonsterID, _locations[0]);
@@ -164,7 +166,7 @@ void ASGameModeBase::OnBotSpawnQueryComplited(UEnvQueryInstanceBlueprintWrapper*
 
 void ASGameModeBase::OnMonsterLoaded(FPrimaryAssetId LoadedId, FVector SpawnLocation)
 {
-	LogOnScreen(this, "Fineshed monster loading!!", FColor::Green);
+	//LogOnScreen(this, "Fineshed monster loading!!", FColor::Green);
 
 	FActorSpawnParameters _spawnParams;
 	_spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -179,7 +181,7 @@ void ASGameModeBase::OnMonsterLoaded(FPrimaryAssetId LoadedId, FVector SpawnLoca
 
 			if (_newBot)
 			{
-				LogOnScreen(this, FString::Printf(TEXT("Spawned enemy: %s (%s)"), *GetNameSafe(_newBot), *GetNameSafe(_monsterData)));
+				//LogOnScreen(this, FString::Printf(TEXT("Spawned enemy: %s (%s)"), *GetNameSafe(_newBot), *GetNameSafe(_monsterData)));
 
 				//Grant special actions/buffs
 				USActionComponent* _botActionComp = Cast<USActionComponent>(_newBot->GetComponentByClass(USActionComponent::StaticClass()));
@@ -261,7 +263,7 @@ void ASGameModeBase::OnActorKilled(AActor* VictimActor, AActor* Killer)
 			if (_playerState)
 			{
 				//Give credits for bot kill
-				_playerState->AddCredits(BotKillCreditRewardAmount, VictimActor);
+				_playerState->AddCredits(BotKillCreditRewardAmount);
 			}
 		}
 	}
@@ -277,111 +279,18 @@ void ASGameModeBase::OnActorKilled(AActor* VictimActor, AActor* Killer)
 			_timerDelegate.BindUFunction(this, "RespawnPlayerElapsed", _playerCharacter->GetController());
 
 			GetWorldTimerManager().SetTimer(_timerHandle_RespawnDelay, _timerDelegate, PlayerRespawnDelay, false);
+
+			ASPlayerState* PS = _playerCharacter->GetPlayerState<ASPlayerState>();
+			if (PS)
+			{
+				PS->UpdatePersonalRecord(GetWorld()->TimeSeconds);
+			}
+
+			USSaveGameSubsystem* SG = GetGameInstance()->GetSubsystem<USSaveGameSubsystem>();
+			// Immediately auto save on death
+			SG->WriteSaveGame();
 		}
 
 		UE_LOG(LogTemp, Log, TEXT("OnActorKilled: Victim: %s, Killer: %s"), *GetNameSafe(VictimActor), *GetNameSafe(Killer));
 	}
-}
-
-
-//Saves
-
-
-void ASGameModeBase::WriteSaveGame()
-{
-	// Iterate all player states, we don't have proper ID to match yet (requiers Steam or EQS)
-	for(int32 i = 0; i < GameState->PlayerArray.Num(); i++)
-	{
-		ASPlayerState* _playerState = Cast<ASPlayerState>(GameState->PlayerArray[i]);
-		if(_playerState)
-		{
-			_playerState->SavePlayerState(CurrentSaveGame);
-
-			break; //single player only at this point
-		}
-	}
-
-	CurrentSaveGame->SavedActors.Empty();
-
-	//Itirate the entire world of actors
-	for(FActorIterator _it(GetWorld()); _it; ++_it)
-	{
-		AActor* _actor = *_it;
-		//only interested in our 'gameplay actors'
-		if(!_actor->Implements<USGameplayInterface>())
-		{
-			continue;
-		}
-
-		FActorSaveData _actorData;
-		_actorData.ActorName = _actor->GetName();
-		_actorData.Transform = _actor->GetActorTransform();
-
-		//Pass in the array to fill with data from Actor
-		FMemoryWriter _memWriter(_actorData.ByteData);
-		FObjectAndNameAsStringProxyArchive _ar(_memWriter, true);
-
-		// Find ONLY viriables with UPROPERTY(SaveGame)
-		_ar.ArIsSaveGame = true;
-
-		//Converts Actpor's SaveGame UPROPERTIES to binary array
-		_actor->Serialize(_ar);
-
-		CurrentSaveGame->SavedActors.Add(_actorData);
-	}
-
-	UGameplayStatics::SaveGameToSlot(CurrentSaveGame, SaveSlotName, 0);
-}
-
-void ASGameModeBase::LoadSaveGame()
-{
-	if (UGameplayStatics::DoesSaveGameExist(SaveSlotName, 0))
-	{
-		CurrentSaveGame = Cast<USSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0));
-		if (CurrentSaveGame == nullptr)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to load SaveGame data."));
-			return;
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("loaded SaveGame data."));
-
-		for (FActorIterator _it(GetWorld()); _it; ++_it)
-		{
-			AActor* _actor = *_it;
-			//only interested in our 'gameplay actors'
-			if (!_actor->Implements<USGameplayInterface>())
-			{
-				continue;
-			}
-
-			for (FActorSaveData _actorData : CurrentSaveGame->SavedActors)
-			{
-				if (_actorData.ActorName == _actor->GetName())
-				{
-					_actor->SetActorTransform(_actorData.Transform);
-
-					//Get filled array from Actor SaveGame
-					FMemoryReader _memReader(_actorData.ByteData);
-					FObjectAndNameAsStringProxyArchive _ar(_memReader, true);
-					_ar.ArIsSaveGame = true;
-
-					//Converts binary array back to actor's variables
-					_actor->Serialize(_ar);
-
-					ISGameplayInterface::Execute_OnActorLoaded(_actor);
-
-					break;
-				}
-			}
-		}
-	}
-	else
-	{
-		CurrentSaveGame = Cast<USSaveGame>(UGameplayStatics::CreateSaveGameObject(USSaveGame::StaticClass()));
-
-		UE_LOG(LogTemp, Log, TEXT("Created new SaveGame data."));
-	}
-
-	
 }
